@@ -1,0 +1,18 @@
+Metadata-Version: 1.1
+Name: bopy
+Version: 0.1
+Summary: bopy is coming!
+Home-page: http://github.com/hypergravity/bopy
+Author: Bo Zhang
+Author-email: bozhang@nao.cas.cn
+License: New BSD
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 6 - Mature
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Scientific/Engineering :: Astronomy
+Classifier: Topic :: Scientific/Engineering :: Physics

@@ -1,0 +1,11 @@
+Author:
+
+Bo Zhang <bozhang@nao.cas.cn>
+
+Direct contributions to the code base:
+
+General help:
+
+Bug reports:
+(incomplete list, apologies if I forgot anybody!)
+
