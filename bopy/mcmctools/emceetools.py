@@ -92,4 +92,6 @@ def emcee_general_run(fun_prior,
                               labels=param_labels,
                               truths=np.median(sampler.flatchain[:], axis=0))
     tmp.savefig(output_corner)
+
+    # save chain data
     np.savetxt(output_chaindata, sampler.flatchain[:], delimiter=',')
