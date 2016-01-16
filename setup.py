@@ -20,7 +20,7 @@ setup(
         "Topic :: Scientific/Engineering :: Astronomy",
         "Topic :: Scientific/Engineering :: Physics"],
     package_dir = {'bopy/': ''},
-    packages = ['bopy','bopy/spec','bopy/core','bopy/mcmctools'],
+    packages = ['bopy','bopy/spec','bopy/core','bopy/mcmctools','bopy/obstools'],
     package_data = {'bopy/data':[''],
                     "": ["LICENSE"]},
     include_package_data = True
