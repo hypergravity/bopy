@@ -24,9 +24,11 @@ Aims
 
 """
 
+
+import numpy as np
 from astropy.io import fits
 from astropy.table import Table, Column
-import numpy as np
+
 
 
 def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
@@ -117,6 +119,7 @@ def read_spectrum(filepath, filesource='auto'):
             return read_spectrum(filepath, filesource='sdss_dr12')
         if telescope == 'LAMOST':
             return read_spectrum(filepath, filesource='lamost_dr3')
+
     # SDSS DR10/DR12 spectrum
     if filesource == 'sdss_dr10' or filesource == 'sdss_dr12':
         data = fits.open(filepath)
@@ -125,8 +128,9 @@ def read_spectrum(filepath, filesource='auto'):
         flux_err = Column(name='flux_err', data=(specdata['ivar']) ** -0.5)
         specdata.add_columns([wave, flux_err])
         return specdata
-    # LAMOST DR2 spectrum
-    if filesource == 'lamost_dr2':
+
+    # LAMOST DR2/DR3 spectrum
+    if filesource == 'lamost_dr3':
         data = fits.open(filepath)
         specdata = Table(data[0].data.T)
         flux = Column(name='flux', data=specdata['col0'])
@@ -145,7 +149,7 @@ def test_read_spectrum():
     fp = '/home/cham/PycharmProjects/bopy/bopy/data/test_spectra/lamost_dr3/'\
          + lamost_filepath('GAC_061N46_V3', 55939, 7, 78)
     print fp
-    sp = read_spectrum(fp, filesource='lamost_dr2')
+    sp = read_spectrum(fp)
     sp.pprint()
 
 
@@ -161,101 +165,9 @@ if __name__ == '__main__':
     print '@Cham: testing ''read_spectrum'' ...'
     test_read_spectrum()
 
-    # # filepath = 'spec-6064-56097-0980.fits'
-    # # filepath = 'spec-1230-52672-0233.fits'
-    # # filepath = 'spec-56309-GAC088N20V1_sp08-126.fits'
-    # # spec = read_spectrum(filepath, filesource)
-    #
-    # # fig = plt.figure()
-    # # ax = fig.add_axes()
-    # # plt.plot(spec['wave']/(1+z), spec['flux'], 'b')
-    # # plt.plot(spec['wave']/(1+z), spec['flux_err'], 'r')
-    #
-    # # from spectrum import generate_lamost_filepath,read_spectrum,measure_line_index
-    # filepath = '/home/cham/data/ToolFun/spectra/spec-1230-52672-0233.fits'
-    # filesource = 'auto'
-    # #    filepath = r'/pool/LAMOST/DR2/spectra/fits/F5902/spec-55859-F5902_sp01-001.fits'
-    # #    filesource = 'lamost_dr2'
-    # spec = read_spectrum(filepath, filesource)  # 10 loops, best of 3: 35.7 ms per loop
-    # #    line_indx_pack = measure_line_index_loopfun(filepath)
-    # z = 0.00205785
-    # line_info_dib6284 = {'line_center':         6285,
-    #                      'line_range':          (6280, 6290),
-    #                      'line_shoulder_left':  (6260, 6280),
-    #                      'line_shoulder_right': (6310, 6330)}
-    # line_indx = measure_line_index(wave=spec['wave'],
-    #                                flux=spec['flux'],
-    #                                flux_err=spec['flux_err'],
-    #                                mask=spec['and_mask'],
-    #                                line_info=line_info_dib6284,
-    #                                num_refit=100,
-    #                                z=z)
-    # print line_indx
-    # '''
-    # 45 ms for integration and other procedures
-    # 380 ms for 100 refits
-    # In the fastest way (45ms), run 40 line indices on 4 million spectra:
-    # 0.045*40*4E6/24/86400 ~ 3.5 days
-    # In the slowest way (380ms)
-    # 0.420*40*4E6/24/86400 ~ 32.5 days
-    # '''
 
-# %%
-# plt.plot(wave_range, flux_range, 'bo-')
-# plt.plot(wave_range, (1-mod_gauss.eval(par_gauss, x=wave_range))*cont_range,'k--')
-# plt.plot(wave_range, (1-out_gauss.best_fit)*cont_range, 'r-')
-# plt.show()
-
-# %%
-# plt.plot(wave_shoulder, flux_shoulder, 'bo-')
-# plt.plot(wave_shoulder, mod_linear.eval(par_linear, x=wave_shoulder),'k--')
-# plt.plot(wave_shoulder, out_linear.best_fit, 'r-')
-# plt.show()
-
-# %%
-# fig = plt.figure()
-# ax = fig.add_axes()
-# plt.plot(\
-#        wave,flux,'b-')
-# plt.plot(\
-#        wave_shoulder_left,\
-#        flux_shoulder_left,\
-#        'g-')
-# plt.plot(\
-#        wave_shoulder_right,\
-#        flux_shoulder_right,\
-#        'g-')
-# plt.plot(\
-#        hstack([wave_shoulder_left,wave_shoulder_right]),\
-#        pget.best_fit,\
-#        'r-')
-# plt.plot(\
-#        wave_range,flux_range,'b-')
+# documents of data structures
 #
-# plt.xlim(6260,6330)
-# plt.ylim(50,80)
-
-
-
-
-# linear_fun_slope = \
-#        (flux_shoulder_right_med-flux_shoulder_left_med)/\
-#        (wave_shoulder_right_med-wave_shoulder_left_med)
-# linear_fun_ofst  = \
-#        flux_shoulder_left_med-linear_fun_slope*wave_shoulder_left_med
-# linear_fun = lambda x: linear_fun_slope*x+linear_fun_ofst
-
-# fig = plt.figure()
-# ax = fig.add_axes()
-# plt.plot(spec['wave']/(1+z), spec['flux'], 'b')
-# plt.plot(spec['wave']/(1+z), spec['flux_err'], 'r')
-# plt.plot(wave, linear_fun(wave), 'r')
-# plt.plot(wave_shoulder_left, flux_shoulder_left, 'go')
-# plt.plot(wave_shoulder_right, flux_shoulder_right, 'go')
-
-# %% document
-
-# % data structure +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # filesource:   'lamost_dr2' ----------------------------------------------
 # http://dr2.lamost.org/doc/data-production-description#toc_3
 #
