@@ -3,11 +3,11 @@
 
 Author
 ------
-- Bo Zhang
+Bo Zhang
 
 Email
 -----
-- bozhang@nao.cas.cn
+bozhang@nao.cas.cn
 
 Created on
 ----------
