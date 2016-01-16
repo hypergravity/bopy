@@ -20,7 +20,6 @@ Modifications
 
 Aims
 ----
-- to read LAMOST/SDSS spectra
 - measure line index from spectra
 
 """
