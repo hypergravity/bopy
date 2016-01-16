@@ -164,9 +164,10 @@ if __name__ == '__main__':
     print ''
     print '@Cham: testing ''read_spectrum'' ...'
     test_read_spectrum()
+    print '@Cham: OK'
 
 
-# documents of data structures
+# documents of data structures (LAMOST and SDSS spectra)
 #
 # filesource:   'lamost_dr2' ----------------------------------------------
 # http://dr2.lamost.org/doc/data-production-description#toc_3
