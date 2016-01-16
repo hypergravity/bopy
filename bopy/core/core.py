@@ -7,8 +7,6 @@ Created on Mon Jan  4 20:08:23 2016
 import numpy as np
 
 
-__version__ = '0.0.1'
-
 
 def logical_and_ext(ind_list):
     """ return the logical_and results for a list of index
