@@ -17,6 +17,7 @@ Modifications
 -------------
 - Wed Jul 29 21:46:00 2015    measure_line_index
 - Fri Nov 20 10:16:59 2015    reformatting code
+- Sat Jan 16 19:55:57 2016    migrate from spec.py
 
 Aims
 ----
@@ -28,25 +29,52 @@ from astropy.io import fits
 from astropy.table import Table, Column
 import numpy as np
 from lmfit.models import LinearModel, GaussianModel
+from lmfit import minimize, Parameters, Model
 
-
-def measure_line_index(wave, flux, flux_err, mask,
+def measure_line_index(wave, flux, flux_err=None, mask=None,
                        line_info=None, num_refit=0, z=0.):
     """measure line index / line EW
 
-    :param wave:        wavelength
-    :param flux:        flux
-    :param flux_err:    flux error
-    :param mask:        andmask / ormask
-    :param line_info:   information about spectral line (dict)
-    :param num_refit:   number of refitting
-    :param z:           redshift (only specify when z is large)
-    :return:
+    Parameters
+    ----------
+
+    wave: array
+        wavelength vector
+
+    flux: array
+        flux vector
+
+    flux_err: array
+        flux error vector (optional)
+        If un-specified, auto-generate an np.ones array
+
+    mask: array
+        andmask or ormask (optional)
+        If un-specified, auto-generate an np.ones array (evenly weighted)
+
+    line_info:   information about spectral line (dict)
+        line_info_dib5780 = {'line_center':         5780,
+                             'line_range':          (5775, 5785),
+                             'line_shoulder_left':  (5755, 5775),
+                             'line_shoulder_right': (5805, 5825)}
+
+    num_refit: non-negative integer
+        number of refitting.
+        If 0, no refit will be performed
+        If positive, refits will be performed after adding random noise
+
+    z: float
+        redshift (only specify when z is large)
+
+    Returns
+    -------
+
+    line_indx: dict
+        A dictionary type result of line index.
+        If any problem encountered, return the default result (filled with nan).
+
     """
     try:
-        ''' 0. import packages ------------------------------------------------
-        '''
-        from lmfit import minimize, Parameters, Model
         ''' 1. get line information -------------------------------------------
         '''
         # line_center = line_info['line_center']    # not used
@@ -58,7 +86,7 @@ def measure_line_index(wave, flux, flux_err, mask,
         '''
         wave = np.array(wave)
         flux = np.array(flux)
-        if z != 0:
+        if not z == 0:
             wave /= 1. + z
 
         ''' 3. estimate the local continuum -----------------------------------
@@ -286,19 +314,8 @@ def measure_line_index_recover_spectrum(wave, params, norm=False):
     return flux
 
 
-# %% test
-if __name__ == '__main__':
-    # filepath = 'spec-6064-56097-0980.fits'
-    # filepath = 'spec-1230-52672-0233.fits'
-    # filepath = 'spec-56309-GAC088N20V1_sp08-126.fits'
-    # spec = read_spectrum(filepath, filesource)
-
-    # fig = plt.figure()
-    # ax = fig.add_axes()
-    # plt.plot(spec['wave']/(1+z), spec['flux'], 'b')
-    # plt.plot(spec['wave']/(1+z), spec['flux_err'], 'r')
-
-    # from spectrum import generate_lamost_filepath,read_spectrum,measure_line_index
+def test_():
+    from bopy.spec import read_spectrum
     filepath = '/home/cham/data/ToolFun/spectra/spec-1230-52672-0233.fits'
     filesource = 'auto'
     #    filepath = r'/pool/LAMOST/DR2/spectra/fits/F5902/spec-55859-F5902_sp01-001.fits'
@@ -326,6 +343,35 @@ if __name__ == '__main__':
     In the slowest way (380ms)
     0.420*40*4E6/24/86400 ~ 32.5 days
     '''
+
+
+def test_measure_line_index():
+    from bopy.spec import read_spectrum, lamost_filepath
+    fp = '/home/cham/PycharmProjects/bopy/bopy/data/test_spectra/lamost_dr3/'\
+         + lamost_filepath('GAC_061N46_V3', 55939, 7, 78)
+    sp = read_spectrum(fp)
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    plt.plot(sp['wave'], sp['flux'], 'b-')
+    plt.plot(sp['wave'], sp['flux']+sp['flux_err'], 'm-')
+    plt.plot(sp['wave'], sp['flux']-sp['flux_err'], 'm-')
+    plt.xlim((6563-200., 6563+200.))
+    plt.xlabel('wavelength')
+    plt.ylabel('flux')
+    fig.show()
+    fig.savefig('/home/cham/PycharmProjects/bopy/bopy/data/test_measure_line_index.png')
+
+
+# %% test
+if __name__ == '__main__':
+    test_measure_line_index()
+    # filepath = 'spec-6064-56097-0980.fits'
+    # filepath = 'spec-1230-52672-0233.fits'
+    # filepath = 'spec-56309-GAC088N20V1_sp08-126.fits'
+    # spec = read_spectrum(filepath, filesource)
+
+    # from spectrum import generate_lamost_filepath,read_spectrum,measure_line_index
+
 
 # %%
 # plt.plot(wave_range, flux_range, 'bo-')
@@ -380,49 +426,3 @@ if __name__ == '__main__':
 # plt.plot(wave, linear_fun(wave), 'r')
 # plt.plot(wave_shoulder_left, flux_shoulder_left, 'go')
 # plt.plot(wave_shoulder_right, flux_shoulder_right, 'go')
-
-# %% document
-
-# % data structure +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# filesource:   'lamost_dr2' ----------------------------------------------
-# http://dr2.lamost.org/doc/data-production-description#toc_3
-#
-#  RowNumber 	Data                Type
-#  1           Flux                float
-#  2           Inverse Variance 	float
-#  3           WaveLength          float
-#  4           Andmask             float
-#  5           Ormask              float
-#
-#
-# filesource:   'sdss_dr10' -----------------------------------------------
-# http://data.sdss3.org/datamodel/files/BOSS_SPECTRO_REDUX/RUN2D/spectra/PLATE4/spec.html
-#
-#  HDU 0  : Header info from spPlate
-#  HDU 1  : Coadded spectrum from spPlate --> use this
-#  HDU 2  : Summary metadata copied from spAll
-#  HDU 3  : Line fitting metadata from spZline
-#  HDU 4+ : [Optional] Individual spCFrame spectra [B, R for each exposure]
-#
-#
-# HDU 0: Header keywords only
-#
-# Copied from spPlate with the following additions/modifications:
-#
-#    PLUG_RA, PLUG_DEC, THING_ID, FIBERID: added from spAll
-#    NEXP and EXPID*: modified to just include the frames which contributed to this fiber
-#    Removed keywords which apply only to single exposures
-#
-# HDU 1 (extname COADD): Coadded Spectrum from spPlate
-#
-# Binary table with columns:
-#  Required    Columns
-#  Col     Name        Type        Comment
-#  1       flux        float32 	coadded calibrated flux [10-17 ergs/s/cm2/Å]
-#  2       loglam      float32 	log10(wavelength [Å])
-#  3       ivar        float32 	inverse variance of flux
-#  4       and_mask 	int32       AND mask
-#  5       or_mask 	int32       OR mask
-#  6       wdisp       float32 	wavelength dispersion in pixel=dloglam units
-#  7       sky         float32 	subtracted sky flux [10-17 ergs/s/cm2/Å]
-#  8       model       float32 	pipeline best model fit used for classification and redshift
