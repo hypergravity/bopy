@@ -82,7 +82,7 @@ def finder_chart_url_stscidss(
                '&w=%f',
                '&f=%s',
                '&c=none&fov=NONE&v3=']
-    urldict = {True:'%2B',False:'-'}
+    urldict = {True: '%2B', False: '-'}
 
     if np.isscalar(c.ra.hms.h):
         # only 1 pair of [ra, dec]
@@ -109,7 +109,7 @@ def finder_chart_url_stscidss(
             urlpiece = [
                 urlform[0] % v,
                 urlform[1] % (c_.ra.hms.h, c_.ra.hms.m, c_.ra.hms.s),
-                urlform[2] % (urldict[c_.dec.dms.d>=0],
+                urlform[2] % (urldict[c_.dec.dms.d >= 0],
                               np.abs(c_.dec.dms.d),
                               np.abs(c_.dec.dms.m),
                               np.abs(c_.dec.dms.s)),
