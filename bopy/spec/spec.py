@@ -30,13 +30,11 @@ from astropy.io import fits
 from astropy.table import Table, Column
 
 
-
 def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
     """ generate file path of A LAMOST spectrum
 
     Parameters
     ----------
-
     planid: string
         planid
 
@@ -54,7 +52,6 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
 
     Rreturns
     --------
-
     filepath: string
         the path of root dir of directory (prefix).
         if un-specified, return file name.
