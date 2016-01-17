@@ -1,8 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-@author: cham
-Created on Mon Jan  4 20:08:23 2016
+
+Author
+------
+Bo Zhang
+
+Email
+-----
+bozhang@nao.cas.cn
+
+Created on
+----------
+- Mon Jan  4 20:08:23 2016
+
+Modifications
+-------------
+-
+
+Aims
+----
+- implement handy functions
+
 """
+
 
 import numpy as np
 
@@ -70,6 +90,6 @@ def core_print():
 if __name__ == '__main__':
     print logical_or_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
     print logical_and_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
-    
+    print "@Cham: test passed ..."
 
 
