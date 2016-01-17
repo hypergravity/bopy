@@ -1,8 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-@author: cham
-Created on Mon Jan  4 20:08:23 2016
+
+Author
+------
+Bo Zhang
+
+Email
+-----
+bozhang@nao.cas.cn
+
+Created on
+----------
+- Sun Jan  4 20:08:23 2016
+
+Modifications
+-------------
+-
+
+Aims
+----
+- implement handy functions used for running emcee
+
 """
+
 
 import numpy as np
 import emcee
@@ -101,3 +121,8 @@ def emcee_general_run(lnprob,
 
     # return [16., 50., 84.] percentiles of estimated parameters
     return np.percentile(sampler.flatchain[:], [16., 50., 84.], axis=0)
+
+
+if __name__ == "__main__":
+    print "@Cham: test function not implemented ..."
+    print "@Cham: but emcee_general_run was tested to be OK ..."
