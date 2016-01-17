@@ -23,6 +23,7 @@ setup(
     packages = ['bopy','bopy/spec','bopy/core','bopy/mcmctools','bopy/obstools'],
     package_data = {'bopy/data':[''],
                     "": ["LICENSE"]},
-    include_package_data = True
+    include_package_data = True,
+    requires=['astropy']
     )
 
