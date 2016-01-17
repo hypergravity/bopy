@@ -86,7 +86,7 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
                              for i in xrange(len(mjd))])
 
 
-def test_lamost_filepath():
+def _test_lamost_filepath():
     """test function **lamost_filepath**
     """
     print lamost_filepath('GAC_061N46_V3', 55939, 7, 78)
@@ -145,7 +145,7 @@ def read_spectrum(filepath, filesource='auto'):
     return None
 
 
-def test_read_spectrum():
+def _test_read_spectrum():
     fp = '/home/cham/PycharmProjects/bopy/bopy/data/test_spectra/lamost_dr3/'\
          + lamost_filepath('GAC_061N46_V3', 55939, 7, 78)
     print fp
@@ -160,10 +160,10 @@ if __name__ == '__main__':
     print '@Cham: start to test the module ...'
     print ''
     print '@Cham: testing ''lamost_filepath'' ...'
-    test_lamost_filepath()
+    _test_lamost_filepath()
     print ''
     print '@Cham: testing ''read_spectrum'' ...'
-    test_read_spectrum()
+    _test_read_spectrum()
     print '@Cham: OK'
 
 
