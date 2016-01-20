@@ -1,6 +1,6 @@
-.idea/*.iml
-.idea/*.xml
-.idea
+*.iml
+*.xml
+.idea*
 *.fits*
 *.aux
 *.dvi
