@@ -26,5 +26,5 @@ Aims
 import numpy as np
 from ..spec.spec import read_spectrum
 
-def load
+# def load
 
