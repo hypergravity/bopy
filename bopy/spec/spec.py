@@ -127,7 +127,7 @@ def read_spectrum(filepath, filesource='auto'):
         return specdata
 
     # LAMOST DR2/DR3 spectrum
-    if filesource == 'lamost_dr3':
+    if filesource == 'lamost_dr3' or filesource == 'lamost_dr2' or filesource == 'lamost_dr1':
         data = fits.open(filepath)
         specdata = Table(data[0].data.T)
         flux = Column(name='flux', data=specdata['col0'])
