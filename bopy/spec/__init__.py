@@ -1,2 +1,7 @@
-from bopy.spec.spec import read_spectrum, lamost_filepath
+
+from .spec import lamost_filepath, read_spectrum
+# from .line_indices import
+
+
+
 __all__ = ['spec']
