@@ -129,7 +129,6 @@ class EchelleSpec:
         else:
             return [self.extract_order(order_) for order_ in order]
 
-
     def extract_order_wave_nearest(self, wave):
         ind = np.argsort(np.abs(self.wave_med-wave))[0]
         return self.spec[ind]
