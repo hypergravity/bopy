@@ -28,6 +28,17 @@ import astropy.constants as const
 import astropy.units as u
 from scipy.interpolate import pchip_interpolate
 
+OVER_SAMPLING = 10.
+# threshold for R_hi_spec/R_hi
+# if R_hi_spec > OVER_SAMPLING*R_hi, then R_interp = R_hi_spec
+# else R_interp = OVER_SAMPLING * np.max([R_hi_spec, R_hi])
+
+KERNEL_LENGTH_FWHM = 4.24
+# kernel array length is 4.24 times FWHM, i.e., 10 sigma
+
+WAVE_NEW_OVERSAMPLE = 5.
+# default sampling rate for wave_new
+
 
 def resolution2fwhm(R):
     assert R > 0.
@@ -77,11 +88,6 @@ def find_spec_max_R(wave):
 
 def find_appropriate_R_interp_for_convolution(R_hi, R_hi_spec):
 
-    OVER_SAMPLING = 10.
-    # threshold
-    # if R_hi_spec > OVER_SAMPLING*R_hi, then R_interp = R_hi_spec
-    # else R_interp = OVER_SAMPLING * np.max([R_hi_spec, R_hi])
-
     R_hi_spec_R_hi = R_hi_spec / R_hi
 
     if R_hi_spec_R_hi > OVER_SAMPLING:
@@ -120,8 +126,6 @@ def generate_gaussian_kernel_array(fwhm_pixel_num, array_length):
 
 
 def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None):
-    KERNEL_LENGTH_FWHM = 5. # kernel array length is 10 times FWHM
-    WAVE_NEW_OVERSAMPLE = 5. # default sampling rate for wave_new
 
     wave_max = np.max(spec['wave'])
     wave_min = np.min(spec['wave'])
