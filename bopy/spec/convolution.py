@@ -152,21 +152,26 @@ def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None):
     return wave_new, flux_new
 
 
-# test a BC03 population spectrum
-from astropy.table import Table
-import matplotlib.pyplot as plt
+def test_bc03_degrade_to_R500():
+    # test a BC03 population spectrum
+    from astropy.table import Table
+    import matplotlib.pyplot as plt
 
-# 1. read spectrum
-fp = '/home/cham/PycharmProjects/bopy/bopy/data/model_bc03/bc2003_hr_m42_chab_ssp_020.spec'
-data = np.loadtxt(fp)
-spec = Table(data, names=['wave', 'flux'])
-spec = spec[np.logical_and(spec['wave']>4000.,spec['wave']<8000.)]
+    # 1. read spectrum
+    fp = '/home/cham/PycharmProjects/bopy/bopy/data/model_bc03/bc2003_hr_m42_chab_ssp_020.spec'
+    data = np.loadtxt(fp)
+    spec = Table(data, names=['wave', 'flux'])
+    spec = spec[np.logical_and(spec['wave']>4000.,spec['wave']<8000.)]
 
-# 2.convolve spectum
-wave_new, flux_new = conv_spec(spec, 2000, 500)
+    # 2.convolve spectum
+    wave_new, flux_new = conv_spec(spec, 2000, 500)
 
-# 3.plot results
-fig = plt.figure()
-plt.plot(spec['wave'], spec['flux'])
-plt.plot(wave_new, flux_new, 'r')
-print 'OK'
+    # 3.plot results
+    fig = plt.figure()
+    plt.plot(spec['wave'], spec['flux'])
+    plt.plot(wave_new, flux_new, 'r')
+    print 'OK'
+
+
+if __name__ =='__main__':
+    test_bc03_degrade_to_R500()
