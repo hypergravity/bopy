@@ -78,6 +78,9 @@ def find_spec_max_R(wave):
 def find_appropriate_R_interp_for_convolution(R_hi, R_hi_spec):
 
     OVER_SAMPLING = 10.
+    # threshold
+    # if R_hi_spec > OVER_SAMPLING*R_hi, then R_interp = R_hi_spec
+    # else R_interp = OVER_SAMPLING * np.max([R_hi_spec, R_hi])
 
     R_hi_spec_R_hi = R_hi_spec / R_hi
 
@@ -117,8 +120,8 @@ def generate_gaussian_kernel_array(fwhm_pixel_num, array_length):
 
 
 def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None):
-    KERNEL_LENGTH_FWHM = 10 # kernel array length is 10 times FWHM
-    WAVE_NEW_OVERSAMPLE = 5.
+    KERNEL_LENGTH_FWHM = 5. # kernel array length is 10 times FWHM
+    WAVE_NEW_OVERSAMPLE = 5. # default sampling rate for wave_new
 
     wave_max = np.max(spec['wave'])
     wave_min = np.min(spec['wave'])
@@ -173,5 +176,5 @@ def test_bc03_degrade_to_R500():
     print 'OK'
 
 
-if __name__ =='__main__':
+if __name__ == '__main__':
     test_bc03_degrade_to_R500()
