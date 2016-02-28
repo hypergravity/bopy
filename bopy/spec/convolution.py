@@ -24,9 +24,11 @@ Aims
 """
 
 import numpy as np
+import datetime
 import astropy.constants as const
 import astropy.units as u
 from scipy.interpolate import pchip_interpolate
+from bopy.spec.spec import spec_quick_init
 
 OVER_SAMPLING = 10.
 # threshold for R_hi_spec/R_hi
@@ -126,12 +128,46 @@ def generate_gaussian_kernel_array(fwhm_pixel_num, array_length):
 
 
 def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None, verbose=True):
+    """ to convolve high-R spectrum to low-R spectrum
 
+    Parameters
+    ----------
+
+    spec: spec object (Table with 'wave' and 'flux' column)
+
+    R_hi: high R
+        original resolution
+
+    R_lo: low R
+        target resolution
+
+    R_interp: float
+        interpolation resolution under which convolution takes place
+
+    wave_new: float or vector
+        if float: this specifies the over-sample rate
+        if voctor: this specifies the new wave array
+
+    verbose: bool
+        if True, print the details on the screen
+
+    Returns
+    -------
+    spec: bopy.spec.spec.Spec
+        Spec, based on astropy.table.Table class
+
+    """
+
+    if verbose:
+        start = datetime.datetime.now()
     wave_max = np.max(spec['wave'])
     wave_min = np.min(spec['wave'])
 
     # R_hi, R_lo, R_interp, Resamp_hi, Resamp_lo
     # 1. find R_interp
+    if verbose:
+        print '--------------------------------------------------------------'
+        print '@Cham: determining R_interp ...'
     if R_interp is None:
         # need to find an R_interp
         R_hi_specmax = find_spec_max_R(spec['wave'])
@@ -139,11 +175,15 @@ def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None, verbose=True):
     assert R_interp >= R_hi
 
     # 2. interpolate high resolution spectra (over-resample)
+    if verbose:
+        print '@Cham: interpolating orignal spectrum to R_interp ...'
     wave_interp = generate_wave_array_R(wave_min, wave_max, R_interp)
     flux_interp = pchip_interpolate(spec['wave'], spec['flux'], wave_interp)
 
     # under this R_interp, what kind of gaussian kernel do I need?
     # 3. calculate gaussian kernel array (under this R_interp, R_gaussian_kernel)
+    if verbose:
+        print '@Cham: generating gaussian kernel array ...'
     R_gaussian_kernel = find_gaussian_kernel_fwhm(R_hi, R_lo, 'R')
     fwhm_pixel_num = R_interp / R_gaussian_kernel
     gs_array = generate_gaussian_kernel_array(fwhm_pixel_num, KERNEL_LENGTH_FWHM*fwhm_pixel_num)
@@ -152,7 +192,6 @@ def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None, verbose=True):
 
     # 4. convolution
     if verbose:
-        print '--------------------------------------------------------------'
         print '@Cham: spectrum convolution start ...'
         print '@Cham: R_hi:              %.2f' % R_hi
         print '@Cham: R_hi_specmax:      %.2f' % R_hi_specmax
@@ -163,27 +202,43 @@ def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None, verbose=True):
               % (len(flux_interp), gs_array_len)
         print '@Cham: target spectrum R_lo: %.2f' % R_lo
         print '@Cham: spectrum convolving ...'
-        print '@Cham: estimated time: %.2f seconds' % (len(flux_interp)*gs_array_len/55408./657.*5.92)
-
+        print '@Cham: estimated convolution time: %.2f seconds ...' \
+              % (len(flux_interp)*gs_array_len/55408./657.*0.05)
+        start_conv = datetime.datetime.now()
     convolved_flux = np.convolve(flux_interp, gs_array)[gs_array_arm:-gs_array_arm]
-
     if verbose:
+        stop_conv = datetime.datetime.now()
         print '@Cham: spectrum convolution complete ...'
-        print '--------------------------------------------------------------'
+        print '@Cham: convolution time spent: %.2f seconds' \
+              % (stop_conv-start_conv).total_seconds()
 
     # 5. find new wave array
     if wave_new is None:
         # need to find new wave
         # default: 5 times over-sample
+        if verbose:
+            print '@Cham: using default 5 times over-sample wave array ...'
         wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1], WAVE_NEW_OVERSAMPLE*R_lo)
     elif np.isscalar(wave_new):
         # wave_new specifies the new wave array resampling rate
         # default is 5. times over-sample
+        if verbose:
+            print '@Cham: using user-specified %.2f times over-sample wave array ...' % wave_new
         wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1], wave_new*R_lo)
+    else:
+        if verbose:
+            print '@Cham: using user-specified wave array ...'
 
     # 6. interpolate convolved flux to new wave array
+    if verbose:
+        print '@Cham: interpolating convolved spectrum to new wave array ...'
     flux_new = pchip_interpolate(wave_interp, convolved_flux, wave_new)
-    return wave_new, flux_new
+    if verbose:
+        stop = datetime.datetime.now()
+        print '@Cham: total time spent: %.2f seconds' % (stop-start).total_seconds()
+        print '--------------------------------------------------------------'
+
+    return spec_quick_init(wave_new, flux_new)
 
 
 def test_bc03_degrade_to_R500():
@@ -198,12 +253,14 @@ def test_bc03_degrade_to_R500():
     spec = spec[np.logical_and(spec['wave'] > 4000., spec['wave'] < 8000.)]
 
     # 2.convolve spectum
-    wave_new, flux_new = conv_spec(spec, 2000, 500)
+    spec_ = conv_spec(spec, 2000, 500, verbose=True)
+    spec_.pprint()
 
     # 3.plot results
     fig = plt.figure()
     plt.plot(spec['wave'], spec['flux'])
-    plt.plot(wave_new, flux_new, 'r')
+    plt.plot(spec_['wave'], spec_['flux'], 'r')
+    fig.show()
     print '@Cham: test OK ...'
 
 
