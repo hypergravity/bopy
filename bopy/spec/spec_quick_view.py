@@ -28,21 +28,8 @@ import matplotlib.pyplot as plt
 
 
 # input: a list of spectra
-# to do: norm spectra --> plot spectra --> print file
+# todo : norm spectra --> plot spectra --> print file
 
 def spec_quick_view(spec_list, norm_flag='', *args):
+    return 0
 
-
-
-def norm_spec(wave, flux, kind='median', amp=2.):
-    """
-
-    Args:
-        wave:
-        flux:
-        kind: {median/med | max | }
-        amp:
-
-    Returns:
-
-    """
