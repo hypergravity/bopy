@@ -38,10 +38,9 @@ class Spec(Table):
         assert 'wave' in self.colnames
         assert 'flux' in self.colnames
 
-    def norm_spec(self, ranges=None, q=0.90, delta_lambda=100.,
-                  norm_flux_colname='flux_norm'):
+    def norm_spec(self, ranges=None, q=0.90, delta_lambda=100.):
         flux_norm, ivar_norm = \
-            continuum_normalize_training_q(self, q=0.90, delta_lambda=100.)
+            norm_spec_running_q(self, q=0.90, delta_lambda=100.)
         self.add_columns([Column(flux_norm, 'flux_norm'),
                           Column(ivar_norm, 'ivar_norm')])
 
