@@ -27,6 +27,8 @@ Aims
 import numpy as np
 from astropy.io import fits
 from astropy.table import Table, Column
+from .continuum_normalization import (_cont_norm_running_quantile,
+                                      _cont_norm_running_quantile_regions)
 
 
 class Spec(Table):
@@ -36,11 +38,17 @@ class Spec(Table):
         assert 'wave' in self.colnames
         assert 'flux' in self.colnames
 
-    # TODO: implement several functions, e.g.,
-    def norm_flux(self, q, norm_flux_colname='flux_norm'):
-        # self[norm_flux_colname] =
-        return 0
+    def norm_spec(self, ranges=None, q=0.90, delta_lambda=100.,
+                  norm_flux_colname='flux_norm'):
+        flux_norm, ivar_norm = \
+            continuum_normalize_training_q(self, q=0.90, delta_lambda=100.)
+        self.add_columns([Column(flux_norm, 'flux_norm'),
+                          Column(ivar_norm, 'ivar_norm')])
 
+
+# ############################# #
+# spectrum quick initialization #
+# ############################# #
 
 def spec_quick_init(wave, flux):
     """
@@ -73,6 +81,58 @@ def _test_spec_quick_init():
     print '--------------------------------------'
     print '@Cham: _test_spec_quick_init() OK ...'
     print '--------------------------------------'
+
+
+# ###################################### #
+# continuum normalization for a spectrum #
+# ###################################### #
+
+def wave2ranges(wave, wave_intervals):
+    """ convert wavelength intervals to (pixel) ranges """
+    wave_intervals = np.array(wave_intervals)
+
+    # assert wave_intervals is a 2-column array
+    assert wave_intervals.shape[1] == 2
+
+    ranges = np.zeros_like(wave_intervals)
+    for i in xrange(len(wave_intervals)):
+        ranges[i, 0] = np.sum(wave < wave_intervals[i, 0])
+        ranges[i, 1] = np.sum(wave < wave_intervals[i, 2]) - 1
+    return ranges
+
+
+def continuum_normalize_training_q(spec, ranges=None, q=0.90, delta_lambda=100.):
+        """ Continuum normalize the training set using a running quantile
+
+        Parameters
+        ----------
+        q: float
+            The quantile cut (q between 0.0 and 1.0)
+        delta_lambda: float
+            The width of the pixel range used to calculate the median
+
+        Returns
+        -------
+        flux_norm, ivar_norm
+
+        """
+        # print("Continuum normalizing the tr set using running quantile...")
+        print('@Cham:: normalizing spectra using running quantile ...')
+        if 'ivar' not in spec.colnames:
+            # this is a bear spectrum without ivar data
+            # produce an all-one array to replace the ivar
+            spec.add_column(Column(np.ones_like(spec['flux']), 'ivar'))
+
+        if ranges is None:
+            # continuous spectrum
+            return _cont_norm_running_quantile(
+                spec['wave'], spec['flux'], spec['ivar'],
+                q=q, delta_lambda=delta_lambda)
+        else:
+            return _cont_norm_running_quantile_regions(
+                spec['wave'], spec['flux'], spec['ivar'],
+                q=q, delta_lambda=delta_lambda, ranges=ranges)
+
 
 if __name__ == '__main__':
     _test_spec_quick_init()
