@@ -101,7 +101,7 @@ def wave2ranges(wave, wave_intervals):
     return ranges
 
 
-def continuum_normalize_training_q(spec, ranges=None, q=0.90, delta_lambda=100.):
+def norm_spec_running_q(spec, ranges=None, q=0.90, delta_lambda=100.):
         """ Continuum normalize the training set using a running quantile
             migrated from TheCannon
 
@@ -133,6 +133,60 @@ def continuum_normalize_training_q(spec, ranges=None, q=0.90, delta_lambda=100.)
             return _cont_norm_running_quantile_regions(
                 spec['wave'], spec['flux'], spec['ivar'],
                 q=q, delta_lambda=delta_lambda, ranges=ranges)
+
+
+# ################################## #
+# other ways to normalize a spectrum #
+# ################################## #
+
+def norm_spec_pixel(spec, norm_wave):
+    sub_nearest_pixel = np.argsort(np.abs(spec['wave']-norm_wave))[0]
+    spec['flux'] /= spec['flux'][sub_nearest_pixel]
+    return spec
+
+
+def norm_spec_median(spec):
+    spec['flux'] /= np.median(spec['flux'])
+    return spec
+
+
+def norm_spec_chunk_median(spec_chunks):
+    for i in xrange(len(spec_chunks)):
+        spec_chunks[i]['flux'] /= np.median(spec_chunks[i]['flux'])
+    return spec_chunks
+
+
+# ##################################################### #
+# it is useful to break spectrum into chunks, sometimes #
+# ##################################################### #
+
+def break_spectrum_into_chunks(spec, ranges=None, amp=None):
+    if ranges is not None:
+        # let's break this spectrum into chunks
+
+        # re-format ranges into numpy.array
+        ranges = np.array(ranges)
+
+        # assert amp is None or a list with the same length
+        if amp is None:
+            amp = np.ones(len(ranges))
+        assert len(amp) == len(ranges)
+
+        # break spectrum into chunks
+        spec_chunks = []
+        for i in xrange(len(ranges)):
+            ind_chunk = np.logical_and(spec['wave'] >= ranges[i][0], spec['wave'] <= ranges[i][0])
+            spec_chunk = spec[ind_chunk]
+            spec_chunk['flux'] *= amp[i]
+            spec_chunks.append(spec_chunk)
+
+    else:
+        # then this spectrum is continuous, return itself
+        return spec
+
+
+def break_spectra_into_chunks(spec_list, ranges=None, amp=None):
+    return [break_spectrum_into_chunks(spec, ranges, amp) for spec in spec_list]
 
 
 if __name__ == '__main__':
