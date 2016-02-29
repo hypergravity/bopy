@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-from TheCannon package
+migrated from TheCannon package
 """
 
 import numpy as np

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-from TheCannon package
+migrated from TheCannon package
 """
 
 import numpy as np
-from functools import partial
-from multiprocessing import Pool
-import matplotlib.pyplot as plt
+# from functools import partial
+# from multiprocessing import Pool
+# import matplotlib.pyplot as plt
 import scipy.optimize as opt
 
 LARGE = 200.
@@ -120,7 +120,7 @@ def _find_cont_gaussian_smooth(wl, fluxes, ivars, w):
     cont[~bad] = top[~bad] / bot[~bad]
     return cont
 
-
+# why dataset?
 def _cont_norm_gaussian_smooth(dataset, L):
     """ Continuum normalize by dividing by a Gaussian-weighted smoothed spectrum
 
@@ -388,4 +388,9 @@ def _cont_norm_regions(fluxes, ivars, cont, ranges):
     return norm_fluxes, norm_ivars
 
 
+# ############################
+# here below goes my functions
+# ############################
 
+
+# def _cont_norm_running_quantile(wave, flux)
