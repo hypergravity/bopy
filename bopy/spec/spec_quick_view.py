@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 # input: a list of spectra
 # todo : norm spectra --> plot spectra --> print file
 
+
 def spec_quick_view(ax, spec_chunk_list, ranges=None,
                     num_spec_perpage=30, offset_perspec=0.5, wave_label='abs',
                     cl='', *args, **kwargs):
