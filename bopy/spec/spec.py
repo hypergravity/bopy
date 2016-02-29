@@ -103,6 +103,7 @@ def wave2ranges(wave, wave_intervals):
 
 def continuum_normalize_training_q(spec, ranges=None, q=0.90, delta_lambda=100.):
         """ Continuum normalize the training set using a running quantile
+            migrated from TheCannon
 
         Parameters
         ----------
