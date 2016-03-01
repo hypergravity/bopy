@@ -15,7 +15,8 @@ Created on
 
 Modifications
 -------------
-- Fri Nov 20 10:16:59 2015    reformatting code
+- Fri Nov 20 10:16:00 2015    reformatting code
+- Tue Mar  1 12:33:00 2016
 
 Aims
 ----
@@ -35,14 +36,49 @@ class Spec(Table):
 
     def __init__(self, *args, **kwargs):
         super(Spec, self).__init__(*args, **kwargs)
-        assert 'wave' in self.colnames
-        assert 'flux' in self.colnames
+        # print self.colnames
+        # assert 'wave' in self.colnames
+        # assert 'flux' in self.colnames
+        # why???
 
     def norm_spec(self, ranges=None, q=0.90, delta_lambda=100.):
+        """
+
+        Parameters
+        ----------
+        ranges: N x 2 numpy.ndarray
+            pixel ranges
+
+        q: float
+            quantile
+
+        delta_lambda: float
+            flux bin width
+
+        Returns
+        -------
+        add flux_norm (& ivar_norm) column
+
+        """
         flux_norm, ivar_norm = \
-            norm_spec_running_q(self, q=0.90, delta_lambda=100.)
-        self.add_columns([Column(flux_norm, 'flux_norm'),
-                          Column(ivar_norm, 'ivar_norm')])
+            norm_spec_running_q(self, ranges=ranges, q=0.90, delta_lambda=100.)
+        if 'ivar' not in self.colnames:
+            self.add_column(Column(flux_norm, 'flux_norm'))
+        else:
+            self.add_columns([Column(flux_norm, 'flux_norm'),
+                              Column(ivar_norm, 'ivar_norm')])
+
+    def extract_chunk_wave_interval(self, wave_intervals):
+        """ return spec chunk in a given wavelength interval """
+        spec_chunks = []
+
+        # should use ind (not sub)
+        for wave_interval in wave_intervals:
+            ind_wave_interval = np.logical_and(
+                self['wave'] >= wave_interval[0],
+                self['wave'] <= wave_interval[1])
+            spec_chunks.append(self[ind_wave_interval])
+        return spec_chunks
 
 
 # ############################# #
@@ -96,7 +132,7 @@ def wave2ranges(wave, wave_intervals):
     ranges = np.zeros_like(wave_intervals)
     for i in xrange(len(wave_intervals)):
         ranges[i, 0] = np.sum(wave < wave_intervals[i, 0])
-        ranges[i, 1] = np.sum(wave < wave_intervals[i, 2]) - 1
+        ranges[i, 1] = np.sum(wave < wave_intervals[i, 1])
     return ranges
 
 
