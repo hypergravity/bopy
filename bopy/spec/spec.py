@@ -41,7 +41,8 @@ class Spec(Table):
         # assert 'flux' in self.colnames
         # why???
 
-    def norm_spec(self, ranges=None, q=0.90, delta_lambda=100.):
+    def norm_spec_running_q(self, ranges=None, q=0.90, delta_lambda=100.,
+                            overwrite_flux=False):
         """
 
         Parameters
@@ -62,23 +63,37 @@ class Spec(Table):
         """
         flux_norm, ivar_norm = \
             norm_spec_running_q(self, ranges=ranges, q=0.90, delta_lambda=100.)
-        if 'ivar' not in self.colnames:
-            self.add_column(Column(flux_norm, 'flux_norm'))
+        if overwrite_flux:
+            self['flux'] = flux_norm
         else:
-            self.add_columns([Column(flux_norm, 'flux_norm'),
-                              Column(ivar_norm, 'ivar_norm')])
+            if 'ivar' not in self.colnames:
+                self.add_column(Column(flux_norm, 'flux_norm'))
+            else:
+                self.add_columns([Column(flux_norm, 'flux_norm'),
+                                  Column(ivar_norm, 'ivar_norm')])
 
-    def extract_chunk_wave_interval(self, wave_intervals):
+    def norm_spec_pixel(self, norm_wave):
+        sub_nearest_pixel = np.argsort(np.abs(self['wave']-norm_wave))[0]
+        self['flux'] /= self['flux'][sub_nearest_pixel]
+        return self
+
+    def norm_spec_median(self):
+        self['flux'] /= np.median(self['flux'])
+        return self
+
+    def extract_chunk_wave_interval(self, wave_intervals=None):
         """ return spec chunk in a given wavelength interval """
-        spec_chunks = []
-
-        # should use ind (not sub)
-        for wave_interval in wave_intervals:
-            ind_wave_interval = np.logical_and(
-                self['wave'] >= wave_interval[0],
-                self['wave'] <= wave_interval[1])
-            spec_chunks.append(self[ind_wave_interval])
-        return spec_chunks
+        if wave_intervals is None:
+            return self
+        else:
+            spec_chunks = []
+            # should use ind (not sub)
+            for wave_interval in wave_intervals:
+                ind_wave_interval = np.logical_and(
+                    self['wave'] >= wave_interval[0],
+                    self['wave'] <= wave_interval[1])
+                spec_chunks.append(self[ind_wave_interval])
+            return spec_chunks
 
 
 # ############################# #
@@ -122,18 +137,21 @@ def _test_spec_quick_init():
 # continuum normalization for a spectrum #
 # ###################################### #
 
-def wave2ranges(wave, wave_intervals):
+def wave2ranges(wave, wave_intervals=None):
     """ convert wavelength intervals to (pixel) ranges """
-    wave_intervals = np.array(wave_intervals)
+    if wave_intervals is None:
+        return None
+    else:
+        wave_intervals = np.array(wave_intervals)
 
-    # assert wave_intervals is a 2-column array
-    assert wave_intervals.shape[1] == 2
+        # assert wave_intervals is a 2-column array
+        assert wave_intervals.shape[1] == 2
 
-    ranges = np.zeros_like(wave_intervals)
-    for i in xrange(len(wave_intervals)):
-        ranges[i, 0] = np.sum(wave < wave_intervals[i, 0])
-        ranges[i, 1] = np.sum(wave < wave_intervals[i, 1])
-    return ranges
+        ranges = np.zeros_like(wave_intervals)
+        for i in xrange(len(wave_intervals)):
+            ranges[i, 0] = np.sum(wave < wave_intervals[i, 0])
+            ranges[i, 1] = np.sum(wave < wave_intervals[i, 1])
+        return ranges
 
 
 def norm_spec_running_q(spec, ranges=None, q=0.90, delta_lambda=100.):
@@ -162,7 +180,7 @@ def norm_spec_running_q(spec, ranges=None, q=0.90, delta_lambda=100.):
         if ranges is None:
             # continuous spectrum
             return _cont_norm_running_quantile(
-                spec['wave'], spec['flux'], spec['ivar'],
+                spec['wave'].data, spec['flux'].data[None,:], spec['ivar'][None,:],
                 q=q, delta_lambda=delta_lambda)
         else:
             return _cont_norm_running_quantile_regions(
