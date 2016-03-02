@@ -120,35 +120,49 @@ def _xtick_pos_lab(n_chunks,
     # xtick_label_type
     if xtick_label_type == 'velocity':
         # need to trasform 'wave_intervals' array to pseudo-volocity array
-        wave_intervals = (wave_intervals - wave_centers) / wave_centers \
-                         * const.c.value / 1000. + wave_centers
+        # array
+        xtick_pos_step = xtick_step * wave_centers / (const.c.value / 1000.)
+        # float
+        xtick_lab_step = xtick_step
+    elif xtick_label_type == 'wavelength':
+        # array
+        xtick_pos_step = np.ones_like(wave_centers) * xtick_step
+        # float
+        xtick_lab_step = xtick_step
+    else:
+        raise ValueError('@Cham: xtick_label_type is wrong!')
 
     for i_chunk in xrange(n_chunks):
-        n_xtick_l = np.int(np.abs((wave_centers[i_chunk] - wave_intervals[i_chunk][0]) / xtick_step))
-        n_xtick_r = np.int(np.abs((wave_centers[i_chunk] - wave_intervals[i_chunk][1]) / xtick_step))
-        xtick_pos_, xtick_lab_ = _generate_chunk_xtick_label(
-            n_xtick_l, n_xtick_r, wave_centers[i_chunk],
-            xtick_step=xtick_step, wave_offset_chunk=wave_offset[i_chunk],
+        n_xtick_l = np.int(np.abs((wave_centers[i_chunk] - wave_intervals[i_chunk][0]) / xtick_pos_step[i_chunk]))
+        n_xtick_r = np.int(np.abs((wave_centers[i_chunk] - wave_intervals[i_chunk][1]) / xtick_pos_step[i_chunk]))
+        xtick_pos_, xtick_lab_ = _generate_chunk_xtick_pos_lab(
+            n_xtick_l,
+            n_xtick_r,
+            wave_centers[i_chunk],
+            xtick_pos_step=xtick_pos_step[i_chunk],
+            xtick_lab_step=xtick_lab_step,
+            wave_offset_chunk=wave_offset[i_chunk],
             xtick_format_str=xtick_format_str)
         xtick_pos.extend(xtick_pos_)
         xtick_lab.extend(xtick_lab_)
     return xtick_pos, xtick_lab
 
 
-def _generate_chunk_xtick_label(n_xtick_l, n_xtick_r,
-                                wave_center,
-                                xtick_step=50.,
-                                wave_offset_chunk=0.,
-                                xtick_format_str=('%.0f', '%.1f')):
+def _generate_chunk_xtick_pos_lab(n_xtick_l,
+                                  n_xtick_r,
+                                  wave_center,
+                                  xtick_pos_step=50.,
+                                  xtick_lab_step=50.,
+                                  wave_offset_chunk=0.,
+                                  xtick_format_str=('%.0f', '%.1f')):
     # relative xtick position
-    xtick_pos_rel = np.arange(-n_xtick_l, n_xtick_r+1) * xtick_step
+    xtick_pos_rel = np.arange(-n_xtick_l, n_xtick_r+1) * xtick_pos_step
+    xtick_pos = xtick_pos_rel + wave_center - wave_offset_chunk
 
     # xtick labels
-    xtick_lab = [xtick_format_str[0] % xtick_pos_rel_ for xtick_pos_rel_ in xtick_pos_rel]
+    xtick_lab_rel = np.arange(-n_xtick_l, n_xtick_r+1) * xtick_lab_step
+    xtick_lab = [xtick_format_str[0] % xtick_lab_rel_ for xtick_lab_rel_ in xtick_lab_rel]
     xtick_lab[n_xtick_l] = xtick_format_str[1] % wave_center
-
-    # xtick positions
-    xtick_pos = xtick_pos_rel + wave_center - wave_offset_chunk
 
     return xtick_pos, xtick_lab
 
@@ -259,7 +273,7 @@ def test_spec_quick_view():
     bc03dir = '/home/cham/PycharmProjects/bopy/bopy/data/model_bc03/'
 
     # prepare wave_intervals
-    wave_intervals = [[5550, 5800], [6250., 6300]]
+    wave_intervals = [[5775, 5785], [6280., 6290]]
 
     # break spectra into chunks
     print('@Cham: loading BC03 spectra and break into chunks ...')
@@ -281,11 +295,11 @@ def test_spec_quick_view():
                         norm_type='chunk_median',
                         wave_intervals=wave_intervals,
                         wave_centers=[5780.1, 6284.1],
-                        xtick_step=50.,
+                        xtick_step=1.,
                         xtick_gap_fraction=0.02,
-                        xtick_label_type='velocity',
+                        xtick_label_type='wavelength',
                         # num_spec_perpage=30,
-                        offset_perspec=0.5,
+                        offset_perspec=0.05,
                         wave_label='abs',
                         cl='k-')
     print spec_chunk_list[0][0]
