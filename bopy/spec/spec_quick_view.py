@@ -35,7 +35,8 @@ from bopy.spec.spec import spec_quick_init, Spec, norm_spec_pixel, wave2ranges
 
 def _spec_list_to_spec_chunk_list(n_spec, n_chunks, spec_list,
                                   norm_type=None, wave_intervals=None,
-                                  q=0.90, delta_lambda=100.):
+                                  flux_amp=None,
+                                  q=0.90, delta_lambda=100., verbose=False):
 
     # -----------------------------------------------------------------
     # norm_type:
@@ -55,9 +56,12 @@ def _spec_list_to_spec_chunk_list(n_spec, n_chunks, spec_list,
     elif norm_type == 'continuum':  # PROBLEM!!!
         # 'continuum'
         for i in xrange(n_spec):
+            if verbose:
+                print('@Cham: spec_list >> spec_chunk_list [continuum][%s]'%i)
             spec_list[i].norm_spec_running_q(
                 ranges=None,
-                q=q, delta_lambda=delta_lambda, overwrite_flux=True)
+                q=q, delta_lambda=delta_lambda,
+                overwrite_flux=True, verbose=verbose)
 
     elif norm_type == 'median':
         # 'median'
@@ -82,6 +86,15 @@ def _spec_list_to_spec_chunk_list(n_spec, n_chunks, spec_list,
             for j in xrange(n_chunks):
                 spec_chunk_list[i][j].norm_spec_median()
 
+    # amplify spec chunks if necessary
+    if flux_amp is not None:
+        flux_amp = np.array(flux_amp)
+        assert len(flux_amp) == n_chunks
+        for i in xrange(n_spec):
+            for j in xrange(n_chunks):
+                spec_chunk_list[i][j]['flux'] = \
+                    (spec_chunk_list[i][j]['flux'] - 1.) * flux_amp[j] + 1.
+
     return spec_chunk_list
 
 
@@ -92,7 +105,10 @@ def _calculate_wave_offset(n_spec, n_chunks, wave_intervals=None,
     # total span of spec chunks
     wave_totalspan = np.sum(np.diff(wave_intervals))
     # gap is a fraction of total span
-    wave_gap = xtick_gap_fraction * wave_totalspan / (n_chunks - 1)
+    if n_chunks > 1:
+        wave_gap = xtick_gap_fraction * wave_totalspan / (n_chunks - 1)
+    else:
+        wave_gap = 0
 
     # calculate wave_offset, i.e.,
     # how much wavelength should shift (to the left side)
@@ -174,6 +190,7 @@ def spec_quick_view(ax,
                     delta_lambda=100.,
                     wave_intervals=None,
                     wave_centers = None,
+                    flux_amp=None,
                     xtick_modify=True,
                     xtick_step = 50.,
                     xtick_gap_fraction = .1,
@@ -181,8 +198,7 @@ def spec_quick_view(ax,
                     xtick_format_str=('%.0f', '%.1f'),
                     xtick_label_type='wavelength',
                     offset_perspec=0.5,
-                    wave_label='abs',
-                    cl='',
+                    verbose=False,
                     *args, **kwargs):
     """
     Parameters
@@ -191,16 +207,61 @@ def spec_quick_view(ax,
         the axes on which spectra will be plotted
     spec_list: list of list
         a list of spec
-    ranges: None or Nx2 array
-        you have to specify ranges if you have more than one chunks for a spec
+    norm_type: string
+        type of normalization
+    q: float
+        smoothness
+    delta_lambda: float
+        bin width
+    wave_intervals: Nx2 array
+        wavelength intervals of spec chunks
+    wave_centers: Nx1 array
+        wavelength centers of spec chunk labels
+    flux_amp: None of Nx1 array
+        amplifiers of each chunk
+    xtick_modify: bool
+        if True, modify the xticks
+    xtick_step: float
+        the step of xticks
+    xtick_gap_fraction: float
+        the fraction of the gap to the total span
+    xtick_start: float
+        the real start X, default is 0
+    xtick_format_str: tuple of two strings
+        the format strings of xtick labels
+    xtick_label_type: string
+        'wavelength' or 'velocity'
+    offset_perspec: float
+        offset between specs
+    verbose: bool
+        if True, print details
+    *args, **kwargs:
+        other plot (keyword) arguments
+
+    Returns
+    -------
+    ax, spec_chunk_list, wave_offset, offset_specs, xlim
 
     """
-
-    wave_intervals = np.array(wave_intervals)
-    n_chunks = len(wave_intervals)
+    # 0. calculate some basic parameters
+    if wave_intervals is None:
+        n_chunks = 1
+        xtick_modify = False
+    else:
+        wave_intervals = np.array(wave_intervals)
+        n_chunks = len(wave_intervals)
     n_spec = len(spec_list)
+    if verbose:
+        print('@Cham: wave_interval:')
+        print(wave_intervals)
+        print('@Cham: n_spec = %s, n_chunks = %s' % (n_spec, n_chunks))
 
-    # norm spec & break spec into chunks -------------------------------------
+    # 1. spec_list --> spec_chunk_list
+    # if verbose:
+    #     print('@Cham: spec_list >> spec_chunk_list [%s]' % norm_type)
+    spec_chunk_list = _spec_list_to_spec_chunk_list(
+        n_spec, n_chunks, spec_list, norm_type, wave_intervals,
+        flux_amp=flux_amp, q=q, delta_lambda=delta_lambda, verbose=verbose)  #
 
     # norm_type:
     #   - None:             'flux' column directly used
@@ -210,14 +271,12 @@ def spec_quick_view(ax,
     #   - 'pixel**':        normalized to a given pixel
     #                        useful for stellar population spectra
 
-    spec_chunk_list = _spec_list_to_spec_chunk_list(
-        n_spec, n_chunks, spec_list, norm_type, wave_intervals,
-        q=q, delta_lambda=delta_lambda)
+    # 2. calculate offset in X and Y directions
 
-    # for XTICK --------------------------------------------------------------
-
+    # offset in Y direction (between specs)
     offset_specs = np.arange(n_spec) * offset_perspec
 
+    # offset in X direction (between spec chunks)
     if not xtick_modify:
         # just plot spec chunks, don't modify XTICK & XTICKLABELS
         for i in xrange(n_spec):
@@ -227,10 +286,12 @@ def spec_quick_view(ax,
                 spec_chunk = spec_chunks[j]
                 ax.plot(spec_chunk['wave'],
                         spec_chunk['flux'] + offset_specs[i],
-                        cl, *args, **kwargs)
-
+                        *args, **kwargs)
         # set xlim
-        ax.set_xlim(np.min(wave_intervals[:, 0]), np.max(wave_intervals[:, 1]))
+        # xlim = np.min(wave_intervals[:, 0]), np.max(wave_intervals[:, 1])
+        # ax.set_xlim(xlim)
+        wave_offset, xlim = None, None
+
     else:
         assert wave_intervals is not None
         # need to modify XTICK & XTICKLABELS
@@ -238,7 +299,7 @@ def spec_quick_view(ax,
         # 1> calculate wave_offset
         wave_offset = _calculate_wave_offset(n_spec, n_chunks, wave_intervals,
                                              xtick_gap_fraction, xtick_start)
-        print 'wave_offset', wave_offset
+        # print 'wave_offset', wave_offset
         for i in xrange(n_spec):
             # for each list of spec chunks, do these:
             spec_chunks = spec_chunk_list[i]
@@ -246,7 +307,7 @@ def spec_quick_view(ax,
                 spec_chunk = spec_chunks[j]
                 ax.plot(spec_chunk['wave'] - wave_offset[j],  # wave_offset
                         spec_chunk['flux'] + offset_specs[i],
-                        cl, *args, **kwargs)
+                        *args, **kwargs)
 
         # 2> calculate xtick position & labels
         xtick_pos, xtick_lab = _xtick_pos_lab(
@@ -254,14 +315,42 @@ def spec_quick_view(ax,
             xtick_format_str=xtick_format_str,
             xtick_label_type=xtick_label_type)
 
+        # set xtick
         ax.set_xticks(xtick_pos)
+        # set xticklabels
         ax.set_xticklabels(xtick_lab)
-
         # set xlim
-        ax.set_xlim(
-            np.min(wave_intervals[:, 0].flatten()-wave_offset.flatten()),
-            np.max(wave_intervals[:, 1].flatten()-wave_offset.flatten()))
-    return ax, spec_chunk_list, wave_offset, offset_specs
+        xlim = np.min(wave_intervals[:, 0].flatten()-wave_offset.flatten()),\
+               np.max(wave_intervals[:, 1].flatten()-wave_offset.flatten())
+        ax.set_xlim(xlim)
+
+    return ax, spec_chunk_list, wave_offset, offset_specs, xlim
+
+
+def spec_quick_view_fiducial(ax, offset_specs, x=None, *args, **kwargs):
+    """
+    Parameters
+    ----------
+    ax: axes
+        the axes on which fiducial lines will be plot
+    offset_specs: array
+        the Y offset values
+    x: two-element array
+        default is ax.get_xlim()
+
+    *args, **kwargs:
+        other plot parameters
+
+    """
+    fiducial_levels = np.array(offset_specs).flatten() + 1
+    fiducial_levels = fiducial_levels.reshape(1, -1)
+    fiducial_levels = fiducial_levels.repeat(2, axis=0)
+    if x is None:
+        x = np.array(ax.get_xlim()).flatten().reshape(-1, 1)
+
+    ax.plot(x, fiducial_levels, *args, **kwargs)
+
+    return None
 
 
 def test_spec_quick_view():
@@ -276,7 +365,7 @@ def test_spec_quick_view():
     wave_intervals = [[5775, 5785], [6280., 6290]]
 
     # break spectra into chunks
-    print('@Cham: loading BC03 spectra and break into chunks ...')
+    print('@Cham: loading BC03 spectra ...')
     spec_list = []
     for i in xrange(10):
         fp = bc03dir + bc03cat['specfile'][i]
@@ -286,26 +375,37 @@ def test_spec_quick_view():
         # spec_chunks_list.append(
         #     spec.extract_chunk_wave_interval(wave_intervals))
         spec_list.append(spec)
+
     # plot spec chunks
-    print('@Cham: ploting spec chunks ...')
+    print('@Cham: ploting spec chunks using spec_quick_view() ...')
     fig = plt.figure('test spec_quick_view method', figsize=(10, 20))
     ax = fig.add_subplot(111)
-    ax, spec_chunk_list, wave_offset, offset_specs = \
-        spec_quick_view(ax, spec_list,
+    ax, spec_chunk_list, wave_offset, offset_specs, xlim = \
+        spec_quick_view(ax,
+                        spec_list,
                         norm_type='chunk_median',
+                        q=0.90,
+                        delta_lambda=100.,
                         wave_intervals=wave_intervals,
                         wave_centers=[5780.1, 6284.1],
-                        xtick_step=1.,
+                        flux_amp=None,
+                        xtick_modify=True,
+                        xtick_step=50.,
                         xtick_gap_fraction=0.02,
-                        xtick_label_type='wavelength',
-                        # num_spec_perpage=30,
+                        xtick_format_str=('%.0f', '%.1f'),
+                        xtick_label_type='velocity',
                         offset_perspec=0.05,
-                        wave_label='abs',
-                        cl='k-')
+                        verbose=True,
+                        ls='--',
+                        c='r')
+
+    spec_quick_view_fiducial(ax, offset_specs, None, 'k--')
+
     print spec_chunk_list[0][0]
     print('@Cham: saving figure ...')
     fig.savefig('/home/cham/PycharmProjects/bopy/bopy/data/test_spec_quick_view/test.pdf')
     print('@Cham: test spec_quick_view OK!')
+
     return 0
 
 

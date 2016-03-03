@@ -251,7 +251,8 @@ def _find_cont_fitfunc_regions(fluxes, ivars, contmask, deg, ranges, ffunc):
     return cont
 
 
-def _find_cont_running_quantile(wl, fluxes, ivars, q, delta_lambda):
+def _find_cont_running_quantile(wl, fluxes, ivars, q, delta_lambda,
+                                verbose=False):
     """ Perform continuum normalization using a running quantile
 
     Parameters
@@ -274,11 +275,13 @@ def _find_cont_running_quantile(wl, fluxes, ivars, q, delta_lambda):
     norm_ivars: numpy ndarray of shape (nstars, npixels)
         rescaled pixel invariances
     """
-    print("contnorm.py: continuum norm using running quantile")
+    if verbose:
+        print("contnorm.py: continuum norm using running quantile")
     cont = np.zeros(fluxes.shape)
     nstars = fluxes.shape[0]
     for jj in range(nstars):
-        print("cont_norm_q(): working on star %s" %jj)
+        if verbose:
+            print("cont_norm_q(): working on star %s" %jj)
         flux = fluxes[jj,:]
         ivar = ivars[jj,:]
         for ll, lam in enumerate(wl):
@@ -298,12 +301,13 @@ def _cont_norm_running_quantile(wl, fluxes, ivars, q, delta_lambda):
     return norm_fluxes, norm_ivars
 
 
-def _cont_norm_running_quantile_regions(wl, fluxes, ivars, q, delta_lambda, ranges):
+def _cont_norm_running_quantile_regions(wl, fluxes, ivars, q, delta_lambda, ranges, verbose=False):
     """ Perform continuum normalization using running quantile, for spectrum
     that comes in chunks
     """
-    print("contnorm.py: continuum norm using running quantile")
-    print("Taking spectra in %s chunks" %len(ranges))
+    # print("contnorm.py: continuum norm using running quantile")
+    if verbose:
+        print("Taking spectra in %s chunks" %len(ranges))
     nstars = fluxes.shape[0]
     norm_fluxes = np.zeros(fluxes.shape)
     norm_ivars = np.zeros(ivars.shape)

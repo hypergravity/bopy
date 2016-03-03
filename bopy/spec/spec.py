@@ -42,7 +42,7 @@ class Spec(Table):
         # why???
 
     def norm_spec_running_q(self, ranges=None, q=0.90, delta_lambda=100.,
-                            overwrite_flux=False):
+                            overwrite_flux=False, verbose=False):
         """
 
         Parameters
@@ -62,7 +62,8 @@ class Spec(Table):
 
         """
         flux_norm, ivar_norm = \
-            norm_spec_running_q(self, ranges=ranges, q=0.90, delta_lambda=100.)
+            norm_spec_running_q(self, ranges=ranges, q=0.90, delta_lambda=100.,
+                                verbose=verbose)
         if overwrite_flux:
             self['flux'] = flux_norm
         else:
@@ -154,7 +155,8 @@ def wave2ranges(wave, wave_intervals=None):
         return ranges
 
 
-def norm_spec_running_q(spec, ranges=None, q=0.90, delta_lambda=100.):
+def norm_spec_running_q(spec, ranges=None, q=0.90, delta_lambda=100.,
+                        verbose=False):
         """ Continuum normalize the training set using a running quantile
             migrated from TheCannon
 
@@ -171,7 +173,8 @@ def norm_spec_running_q(spec, ranges=None, q=0.90, delta_lambda=100.):
 
         """
         # print("Continuum normalizing the tr set using running quantile...")
-        print('@Cham:: normalizing spectra using running quantile ...')
+        if verbose:
+            print('@Cham: normalizing spectra using running quantile ...')
         if 'ivar' not in spec.colnames:
             # this is a bear spectrum without ivar data
             # produce an all-one array to replace the ivar
@@ -181,11 +184,11 @@ def norm_spec_running_q(spec, ranges=None, q=0.90, delta_lambda=100.):
             # continuous spectrum
             return _cont_norm_running_quantile(
                 spec['wave'].data, spec['flux'].data[None,:], spec['ivar'][None,:],
-                q=q, delta_lambda=delta_lambda)
+                q=q, delta_lambda=delta_lambda, verbose=verbose)
         else:
             return _cont_norm_running_quantile_regions(
                 spec['wave'], spec['flux'], spec['ivar'],
-                q=q, delta_lambda=delta_lambda, ranges=ranges)
+                q=q, delta_lambda=delta_lambda, ranges=ranges, verbose=verbose)
 
 
 # ################################## #
