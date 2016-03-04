@@ -38,9 +38,6 @@ OVER_SAMPLING = 10.
 KERNEL_LENGTH_FWHM = 4.24
 # kernel array length is 4.24 times FWHM, i.e., 10 sigma
 
-WAVE_NEW_OVERSAMPLE = 5.
-# default sampling rate for wave_new
-
 
 def resolution2fwhm(R):
     assert R > 0.
@@ -127,7 +124,8 @@ def generate_gaussian_kernel_array(fwhm_pixel_num, array_length):
     return normalized_gaussian_array(xgs, b=0., c=sigma_pixel_num)
 
 
-def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None, verbose=True):
+def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None,
+              wave_new_oversample=5., verbose=True):
     """ to convolve high-R spectrum to low-R spectrum
 
     Parameters
@@ -218,7 +216,7 @@ def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None, verbose=True):
         # default: 5 times over-sample
         if verbose:
             print '@Cham: using default 5 times over-sample wave array ...'
-        wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1], WAVE_NEW_OVERSAMPLE*R_lo)
+        wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1], wave_new_oversample*R_lo)
     elif np.isscalar(wave_new):
         # wave_new specifies the new wave array resampling rate
         # default is 5. times over-sample
@@ -245,12 +243,13 @@ def test_bc03_degrade_to_R500():
     # test a BC03 population spectrum
     from astropy.table import Table
     import matplotlib.pyplot as plt
-
+    from bopy.spec.spec import Spec
     # 1. read spectrum
     fp = '/home/cham/PycharmProjects/bopy/bopy/data/model_bc03/bc2003_hr_m42_chab_ssp_020.spec'
     data = np.loadtxt(fp)
-    spec = Table(data, names=['wave', 'flux'])
-    spec = spec[np.logical_and(spec['wave'] > 4000., spec['wave'] < 8000.)]
+    spec = Spec(data, names=['wave', 'flux'])
+    print spec
+    spec = spec.extract_chunk_wave_interval([[4000., 8000.]])[0]
 
     # 2.convolve spectum
     spec_ = conv_spec(spec, 2000, 500, verbose=True)

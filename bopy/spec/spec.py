@@ -184,7 +184,7 @@ def norm_spec_running_q(spec, ranges=None, q=0.90, delta_lambda=100.,
             # continuous spectrum
             return _cont_norm_running_quantile(
                 spec['wave'].data, spec['flux'].data[None,:], spec['ivar'][None,:],
-                q=q, delta_lambda=delta_lambda, verbose=verbose)
+                q=q, delta_lambda=delta_lambda)
         else:
             return _cont_norm_running_quantile_regions(
                 spec['wave'], spec['flux'], spec['ivar'],

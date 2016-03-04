@@ -383,7 +383,7 @@ def test_spec_quick_view():
     ax, spec_chunk_list, wave_offset, offset_specs, xlim = \
         spec_quick_view(ax,
                         spec_list,
-                        norm_type='chunk_median',
+                        norm_type='continuum',
                         q=0.90,
                         delta_lambda=100.,
                         wave_intervals=wave_intervals,
@@ -401,7 +401,7 @@ def test_spec_quick_view():
 
     spec_quick_view_fiducial(ax, offset_specs, None, 'k--')
 
-    print spec_chunk_list[0][0]
+    # print spec_chunk_list[0][0]
     print('@Cham: saving figure ...')
     fig.savefig('/home/cham/PycharmProjects/bopy/bopy/data/test_spec_quick_view/test.pdf')
     print('@Cham: test spec_quick_view OK!')
