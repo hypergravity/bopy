@@ -23,10 +23,33 @@ Aims
 
 """
 
+# ###########################################################################
+# Enlightening example:
+#
+# for one pixel:
+# R_hi = 2000 @5000A    FWHM_hi =  2.5A
+# R_lo =  500 @5000A    FWHM_lo = 10.0A
+# FWHM_GK = sqrt(10.0**2 - 2.5**2) = 9.68A
+#
+# for next pixel:
+# R_hi = 1000 @5000A    FWHM_hi =  5.0A
+# R_lo =  500 @5000A    FWHM_lo = 10.0A
+# FWHM_GK = sqrt(10.0**2 - 5.0**2) = 8.66A
+#
+# Therefore, to keep the number of pixels of Gaussian Kernels the same,
+# we have to adjust the FWHM_interp (and thus the R_interp).
+#
+# For pixels 2000->500, the FWHM_GK = 9.68 (wider GK),
+# while for pixels 1000-> 500, FWHM_GK = 8.66 (narrower GK),
+# thus the R_interp should be 9.68/8.66=1.12 times higher,
+# i.e., the delta_lambda should be  1./1.12 times smaller.
+# ###########################################################################
+
 import numpy as np
 import datetime
 import astropy.constants as const
 import astropy.units as u
+from inspect import isfunction
 from scipy.interpolate import pchip_interpolate
 from bopy.spec.spec import spec_quick_init
 
@@ -39,50 +62,163 @@ KERNEL_LENGTH_FWHM = 4.24
 # kernel array length is 4.24 times FWHM, i.e., 10 sigma
 
 
-def resolution2fwhm(R):
-    assert R > 0.
-    return const.c.value/R
+# ########################################################################### #
+# ################  transformation between R and FWHM  ###################### #
+# ########################################################################### #
 
 
-def fwhm2resolution(fwhm):
-    assert fwhm > 0.
-    return const.c.value/fwhm
+def resolution2fwhm(R, wave=5000.):
+    # assert R is positive
+    if np.isscalar(R):
+        assert R > 0.
+    else:
+        assert np.all(R > 0.)
+
+    # assert wave is correct in shape
+    assert np.isscalar(wave) or len(wave) == len(R)
+
+    return wave / R
 
 
-def find_gaussian_kernel_fwhm(R_hi, R_lo, return_type='fwhm'):
-    assert R_hi > R_lo
-    fwhm_hi = resolution2fwhm(R_hi)
-    fwhm_lo = resolution2fwhm(R_lo)
-    fwhm = np.sqrt(fwhm_lo**2. - fwhm_hi**2.)
-    if return_type == 'fwhm':
-        return fwhm
-    elif return_type == 'R':
-        return fwhm2resolution(fwhm)
+def fwhm2resolution(fwhm, wave=5000.):
+    # assert fwhm is positive
+    if np.isscalar(fwhm):
+        assert fwhm > 0.
+    else:
+        assert np.all(fwhm > 0.)
+
+    # assert wave is correct in shape
+    assert np.isscalar(wave) or len(wave) == len(fwhm)
+
+    return wave / fwhm
 
 
-def generate_wave_array_step(wave_start, wave_stop, wave_step):
-    return np.arange(wave_start, wave_stop, wave_step)
+# ########################################################################### #
+# ######################  generate wave array given R  ###################### #
+# ########################################################################### #
 
 
-def generate_wave_array_R(wave_start, wave_stop, r):
-    r_ = r - .5
-    # initial guess
-    wave_step_min = wave_start / r_
+def _generate_wave_array_R_fixed(wave_start, wave_stop, R=2000.,
+                                over_sample=1.):
+    """ generate wave array given a fixed R """
+    R_ = over_sample * R - .5
+    # determine wave_step_min
+    wave_step_min = wave_start / R_
+    # wave guess
     wave_step_guess = np.zeros((wave_stop-wave_start)/wave_step_min)
     wave_guess = np.zeros_like(wave_step_guess)
     wave_step_guess[0] = wave_step_min
     wave_guess[0] = wave_start
     # iterate for real
-    for i in np.arange(len(wave_guess)-1)+1:
+    for i in np.arange(1, len(wave_guess)):
         wave_guess[i] = wave_guess[i-1] + wave_step_guess[i-1]
-        wave_step_guess[i] = wave_guess[i] / r_
+        wave_step_guess[i] = wave_guess[i] / R_
     return wave_guess[
         np.logical_and(wave_guess >= wave_start, wave_guess <= wave_stop)]
 
 
-def find_spec_max_R(wave):
+def _generate_wave_array_R_func(wave_start, wave_stop, R=(lambda x: x),
+                               over_sample=1., wave_test_step=1.):
+    """ generate wave array given R as a function """
+    # determine wave_step_min
+    wave_test = np.arange(wave_start, wave_stop, wave_test_step)
+    R_test = over_sample * R(wave_test)
+    wave_step_min = np.min(wave_test / R_test)
+    # wave guess
+    wave_guess = np.zeros((wave_stop-wave_start)/wave_step_min)
+    wave_guess[0] = wave_start
+    # iterate for real # single side R !!!
+    for i in np.arange(1, len(wave_guess)):
+        wave_guess[i] = wave_guess[i-1] + \
+                        wave_guess[i-1] / (over_sample * R(wave_guess[i-1]))
+    return wave_guess[
+        np.logical_and(wave_guess >= wave_start, wave_guess <= wave_stop)]
+
+
+def generate_wave_array_R(wave_start, wave_stop, R=2000.,
+                          over_sample=1., wave_test_step=1.):
+    """ generate a wavelength array matching the given R
+
+    Parameters
+    ----------
+    wave_start: float
+        start from this wavelength
+    wave_stop: float
+        stop at this wavelength
+    R: float or function
+        specify a fixed R or specify R as a function of wavelength
+    over_sample: float
+        over-sampling rate, default is 1.
+    wave_test_step:
+        used to determing the wave_step_min
+
+    Returns
+    -------
+    wave: array
+        an array matching the given R
+
+    Example
+    -------
+    >>> def R(x): return 0.2*x
+    >>> wave_array_R = generate_wave_array_R(4000., 5000., R)
+
+    """
+    if np.isscalar(R):
+        # if R is scalar
+        return _generate_wave_array_R_fixed(
+            wave_start, wave_stop, R=R, over_sample=over_sample)
+    elif isfunction(R):
+        # if R is a function
+        return _generate_wave_array_R_func(
+            wave_start, wave_stop, R=R, over_sample=over_sample, wave_test_step=wave_test_step)
+
+
+# ########################################################################### #
+# ################  generate wave array given delta_lambda  ################# #
+# ########################################################################### #
+
+
+def generate_wave_array_delta_lambda_fixed(wave_start, wave_stop,
+                                           delta_lambda,
+                                           over_sample=1.):
+    """ generate a wavelength array matching the given delta_lambda (fixed) """
+    return np.arange(wave_start, wave_stop, delta_lambda / over_sample)
+
+
+def generate_wave_array_delta_lambda_func(wave_start, wave_stop,
+                                          delta_lambda=(lambda x: 1.),
+                                          over_sample=1.,
+                                          wave_test_step=1.):
+    """ generate a wavelength array matching the given delta_lambda
+        (specified as a function of wavelength) """
+    wave_test = np.arange(wave_start, wave_stop, wave_test_step)
+    delta_lambda_min = np.min(delta_lambda(wave_test))
+    wave_guess = np.arange(wave_start, wave_stop, delta_lambda_min)
+    for i in xrange(1, len(wave_guess)):
+        wave_guess[i] = \
+            wave_guess[i-1] + delta_lambda(wave_guess[i-1]) / over_sample
+    return wave_guess[
+        np.logical_and(wave_guess >= wave_start, wave_guess <= wave_stop)]
+
+
+# ########################################################################### #
+# #################  spectral R (FWHM) and R_max (FWHM_min) ################# #
+# ########################################################################### #
+
+
+def find_R_for_wave_array(wave):
+    """ find the R of wavelength array (sampling resolution array) """
+    wave = wave.flatten()
     wave_diff = np.diff(wave)
-    return np.max(2. * wave[1:-1] / (wave_diff[1:] + wave_diff[:-1]))
+    wave_diff_ = (wave_diff[1:] + wave_diff[:-1]) / 2.
+    R = np.hstack((
+        wave[0]/wave_diff[0], wave[1:-1]/wave_diff_, wave[-1]/wave_diff[-1]))
+    return R
+
+
+def find_R_max_for_wave_array(wave):
+    """ find the maximum sampling resolution of a given wavelength array """
+    return np.max(find_R_for_wave_array(wave))
 
 
 def find_appropriate_R_interp_for_convolution(R_hi, R_hi_spec):
@@ -99,6 +235,21 @@ def find_appropriate_R_interp_for_convolution(R_hi, R_hi_spec):
         R_interp = OVER_SAMPLING * R_hi
 
     return R_interp
+
+
+def find_gaussian_kernel_fwhm(R_hi, R_lo, return_type='fwhm'):
+    assert R_hi > R_lo
+    fwhm_hi = resolution2fwhm(R_hi)
+    fwhm_lo = resolution2fwhm(R_lo)
+    fwhm = np.sqrt(fwhm_lo**2. - fwhm_hi**2.)
+    if return_type == 'fwhm':
+        return fwhm
+    elif return_type == 'R':
+        return fwhm2resolution(fwhm)
+
+
+
+
 
 
 def fwhm2sigma(fwhm):
