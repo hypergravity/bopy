@@ -166,11 +166,13 @@ def generate_wave_array_R(wave_start, wave_stop, R=2000.,
     if np.isscalar(R):
         # if R is scalar
         return _generate_wave_array_R_fixed(
-            wave_start, wave_stop, R=R, over_sample=over_sample)
-    elif isfunction(R):
-        # if R is a function
+            wave_start, wave_stop, R=R,
+            over_sample=over_sample)
+    else:
+        # if R is a function / Interpolator
         return _generate_wave_array_R_func(
-            wave_start, wave_stop, R=R, over_sample=over_sample, wave_test_step=wave_test_step)
+            wave_start, wave_stop, R=R,
+            over_sample=over_sample, wave_test_step=wave_test_step)
 
 
 # ########################################################################### #
@@ -178,17 +180,17 @@ def generate_wave_array_R(wave_start, wave_stop, R=2000.,
 # ########################################################################### #
 
 
-def generate_wave_array_delta_lambda_fixed(wave_start, wave_stop,
-                                           delta_lambda,
-                                           over_sample=1.):
+def _generate_wave_array_delta_lambda_fixed(wave_start, wave_stop,
+                                            delta_lambda,
+                                            over_sample=1.):
     """ generate a wavelength array matching the given delta_lambda (fixed) """
     return np.arange(wave_start, wave_stop, delta_lambda / over_sample)
 
 
-def generate_wave_array_delta_lambda_func(wave_start, wave_stop,
-                                          delta_lambda=(lambda x: 1.),
-                                          over_sample=1.,
-                                          wave_test_step=1.):
+def _generate_wave_array_delta_lambda_func(wave_start, wave_stop,
+                                           delta_lambda=(lambda x: 1.),
+                                           over_sample=1.,
+                                           wave_test_step=1.):
     """ generate a wavelength array matching the given delta_lambda
         (specified as a function of wavelength) """
     wave_test = np.arange(wave_start, wave_stop, wave_test_step)
@@ -201,8 +203,49 @@ def generate_wave_array_delta_lambda_func(wave_start, wave_stop,
         np.logical_and(wave_guess >= wave_start, wave_guess <= wave_stop)]
 
 
+def generate_wave_array_delta_lambda(wave_start, wave_stop,
+                                     delta_lambda=(lambda x: 1.),
+                                     over_sample=1.,
+                                     wave_test_step=1.):
+    """ generate a wavelength array matching the given delta_lambda
+        (delta_lambda given as a fixed number or a function)
+    Parameters
+    ----------
+    wave_start: float
+        where the wavelength starts
+    wave_stop: float
+        where the wavelength stops
+    delta_lambda: float or function
+        specifies the delta_lambda as a fixed number or a function of wavelength
+    over_sample: float
+        over-sampling
+    wave_test_step: float
+        tests for the smallest wave_guess step
+
+    Returns
+    -------
+    wave_guess: array
+
+    Example
+    -------
+    >>> def dl(x): return 0.002*x
+    >>> wave_array_dl = generate_wave_array_delta_lambda(4000., 5000., dl)
+
+    """
+    if np.isscalar(delta_lambda):
+        # if delta_lambda is scalar
+        return _generate_wave_array_delta_lambda_fixed(
+            wave_start, wave_stop, delta_lambda=delta_lambda,
+            over_sample=over_sample)
+    else:
+        # if delta_lambda is a function / Interpolator
+        return _generate_wave_array_delta_lambda_func(
+            wave_start, wave_stop, delta_lambda=delta_lambda,
+            over_sample=over_sample, wave_test_step=wave_test_step)
+
+
 # ########################################################################### #
-# #################  spectral R (FWHM) and R_max (FWHM_min) ################# #
+# ############## find spectral R (FWHM) and R_max (FWHM_min) ################ #
 # ########################################################################### #
 
 
@@ -211,9 +254,8 @@ def find_R_for_wave_array(wave):
     wave = wave.flatten()
     wave_diff = np.diff(wave)
     wave_diff_ = (wave_diff[1:] + wave_diff[:-1]) / 2.
-    R = np.hstack((
+    return np.hstack((
         wave[0]/wave_diff[0], wave[1:-1]/wave_diff_, wave[-1]/wave_diff[-1]))
-    return R
 
 
 def find_R_max_for_wave_array(wave):
@@ -221,35 +263,88 @@ def find_R_max_for_wave_array(wave):
     return np.max(find_R_for_wave_array(wave))
 
 
-def find_appropriate_R_interp_for_convolution(R_hi, R_hi_spec):
+def find_delta_lambda_for_wave_array(wave):
+    """ find the delta_lambda of wavelength array (delta_lambda array) """
+    wave = wave.flatten()
+    wave_diff = np.diff(wave)
+    wave_diff_ = (wave_diff[1:] + wave_diff[:-1]) / 2.
+    return np.hstack((wave_diff[0], wave_diff_, wave[-1]))
 
-    R_hi_spec_R_hi = R_hi_spec / R_hi
 
-    if R_hi_spec_R_hi > OVER_SAMPLING:
-        # already over sampled
-        R_interp = R_hi_spec
-    elif R_hi_spec_R_hi >= 1.:
-        # already over sampled
-        R_interp = OVER_SAMPLING * R_hi_spec
+def find_delta_lambda_min_for_wave_array(wave):
+    """ find the minimum delta_lambda of a given wavelength array """
+    return np.min(find_delta_lambda_for_wave_array(wave))
+
+
+# ########################################################################### #
+# ###############################  find Rgk  ################################ #
+# ########################################################################### #
+
+
+def find_Rgk(R_hi=2000., R_lo=500., over_sample=1.):
+    """ find Rgk as a function of wavelength
+
+    Parameters
+    ----------
+    R_hi: float or funtion
+        higher resolution (as a function of wavelength)
+    R_lo: float or funtion
+        lower resolution (as a function of wavelength)
+    over_sample: float
+        over-sampled resolution, default is 1.
+
+    Returns
+    -------
+    Rgk: function
+        Gaussian Kernel resolution as a function of wavelength
+
+    """
+    if np.isscalar(R_hi):
+        # if R_hi is a fixed number
+        R_hi_ = lambda x: R_hi
     else:
-        R_interp = OVER_SAMPLING * R_hi
+        R_hi_ = R_hi
 
-    return R_interp
+    if np.isscalar(R_lo):
+        # if R_lo is a fixed number
+        R_lo_ = lambda x: R_lo
+    else:
+        R_lo_ = R_lo
 
-
-def find_gaussian_kernel_fwhm(R_hi, R_lo, return_type='fwhm'):
-    assert R_hi > R_lo
-    fwhm_hi = resolution2fwhm(R_hi)
-    fwhm_lo = resolution2fwhm(R_lo)
-    fwhm = np.sqrt(fwhm_lo**2. - fwhm_hi**2.)
-    if return_type == 'fwhm':
-        return fwhm
-    elif return_type == 'R':
-        return fwhm2resolution(fwhm)
+    Rgk = lambda x: \
+        (over_sample * x / np.sqrt((x/R_lo_(x))**2. - (x/R_hi_(x))**2.))
+    return Rgk
 
 
+# def find_appropriate_R_interp_for_convolution(R_hi, R_hi_spec):
+#
+#     R_hi_spec_R_hi = R_hi_spec / R_hi
+#
+#     if R_hi_spec_R_hi > OVER_SAMPLING:
+#         # already over sampled
+#         R_interp = R_hi_spec
+#     elif R_hi_spec_R_hi >= 1.:
+#         # already over sampled
+#         R_interp = OVER_SAMPLING * R_hi_spec
+#     else:
+#         R_interp = OVER_SAMPLING * R_hi
+#
+#     return R_interp
 
 
+# def find_gaussian_kernel_fwhm(R_hi, R_lo, return_type='fwhm'):
+#     assert R_hi > R_lo
+#     fwhm_hi = resolution2fwhm(R_hi)
+#     fwhm_lo = resolution2fwhm(R_lo)
+#     fwhm = np.sqrt(fwhm_lo**2. - fwhm_hi**2.)
+#     if return_type == 'fwhm':
+#         return fwhm
+#     elif return_type == 'R':
+#         return fwhm2resolution(fwhm)
+
+# ########################################################################### #
+# #########################  Gaussian Kernel ################################ #
+# ########################################################################### #
 
 
 def fwhm2sigma(fwhm):
@@ -262,41 +357,62 @@ def sigma2fwhm(sigma):
 
 def normalized_gaussian_array(x, b=0., c=1.):
     # a = 1. / (np.sqrt(2*np.pi) * c)
-    ngs_arr = np.exp(-(x-b)**2./(2.*c**2.))
+    ngs_arr = np.exp(- (x-b)**2. / (2.*c**2.))
     return ngs_arr / np.sum(ngs_arr)
 
 
-def generate_gaussian_kernel_array(fwhm_pixel_num, array_length):
-    sigma_pixel_num = fwhm2sigma(fwhm_pixel_num)
-    array_length = np.fix(array_length)
+def generate_gaussian_kernel_array(over_sample_Rgk, sigma_num):
+    """ generate gaussian kernel array according to over_sample_Rgk
+
+    Parameters
+    ----------
+    over_sample_Rgk: float
+        over_sample rate
+    sigma_num: float
+        1 sigma of the Gaussian = sigma_num pixels
+
+    Returns
+    -------
+    normalized gaussian array
+
+    """
+    sigma_pixel_num = fwhm2sigma(over_sample_Rgk)
+
+    array_length = np.fix(sigma_num * sigma_pixel_num)
     if array_length % 2 == 0:
         array_length += 1
-    xgs = np.arange(array_length) - (array_length-1)/2.
+    array_length_half = (array_length-1) / 2.
+
+    xgs = np.arange(- array_length_half, array_length_half + 1)
     return normalized_gaussian_array(xgs, b=0., c=sigma_pixel_num)
 
 
-def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None,
-              wave_new_oversample=5., verbose=True):
+def conv_spec(spec,
+              R_hi=2000.,
+              R_lo=500.,
+              over_sample_additional=3.,
+              gaussian_kernel_sigma_num=8.,
+              wave_new=None,
+              wave_new_oversample=5.,
+              verbose=True):
     """ to convolve high-R spectrum to low-R spectrum
 
     Parameters
     ----------
-
     spec: spec object (Table with 'wave' and 'flux' column)
-
-    R_hi: high R
-        original resolution
-
-    R_lo: low R
-        target resolution
-
-    R_interp: float
-        interpolation resolution under which convolution takes place
-
-    wave_new: float or vector
+        the original spectrum
+    R_hi: float or function
+        higher resolution
+    R_lo: float or function
+        lower R
+    over_sample_additional: float
+        additional over-sample rate
+    gaussian_kernel_sigma_num: float
+        the gaussian kernel width in terms of sigma
+    wave_new: None or float or array
+        if None: wave_new auto-generated using wave_new_oversample
         if float: this specifies the over-sample rate
-        if voctor: this specifies the new wave array
-
+        if voctor: this specifies the new wave_new array
     verbose: bool
         if True, print the details on the screen
 
@@ -304,81 +420,80 @@ def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None,
     -------
     spec: bopy.spec.spec.Spec
         Spec, based on astropy.table.Table class
+    gk_len_half: float
+        number of pixels in the head and tail which is bad
 
     """
-
     if verbose:
         start = datetime.datetime.now()
+        print '---------------------------------------------------------------'
+        print '@Cham: Welcome to use Bo Zhang''s spectral convolution code ...'
+
+    # 1. re-format R_hi & R_lo
+    assert R_hi is not None and R_lo is not None
+
+    if np.isscalar(R_hi):
+        R_hi_ = lambda x: R_hi
+    else:
+        R_hi_ = R_hi
+
+    if np.isscalar(R_lo):
+        R_lo_ = lambda x: R_lo
+    else:
+        R_lo_ = R_lo
+
+    # 2. find Rgk
+    Rgk = find_Rgk(R_hi_, R_lo_, over_sample=1.)
+
+    # 3. find appropriate over_sample
+    R_hi_specmax = find_R_max_for_wave_array(spec['wave'])
+    R_hi_max = np.max(R_hi_(spec['wave']))
+    over_sample = over_sample_additional * np.fix(np.max([
+        R_hi_specmax/Rgk(spec['wave']), R_hi_max/Rgk(spec['wave'])]))
+
+    # 4. find wave_interp & flux_interp
+    if verbose:
+        print '@Cham: interpolating orignal spectrum to wave_interp ...'
     wave_max = np.max(spec['wave'])
     wave_min = np.min(spec['wave'])
-
-    # R_hi, R_lo, R_interp, Resamp_hi, Resamp_lo
-    # 1. find R_interp
-    if verbose:
-        print '--------------------------------------------------------------'
-        print '@Cham: determining R_interp ...'
-    if R_interp is None:
-        # need to find an R_interp
-        R_hi_specmax = find_spec_max_R(spec['wave'])
-        R_interp = find_appropriate_R_interp_for_convolution(R_hi, R_hi_specmax)
-    assert R_interp >= R_hi
-
-    # 2. interpolate high resolution spectra (over-resample)
-    if verbose:
-        print '@Cham: interpolating orignal spectrum to R_interp ...'
-    wave_interp = generate_wave_array_R(wave_min, wave_max, R_interp)
+    wave_interp = generate_wave_array_R(wave_min, wave_max,
+                                        Rgk, over_sample=over_sample)
     flux_interp = pchip_interpolate(spec['wave'], spec['flux'], wave_interp)
 
-    # under this R_interp, what kind of gaussian kernel do I need?
-    # 3. calculate gaussian kernel array (under this R_interp, R_gaussian_kernel)
+    # 5. generate Gaussian Kernel array
     if verbose:
         print '@Cham: generating gaussian kernel array ...'
-    R_gaussian_kernel = find_gaussian_kernel_fwhm(R_hi, R_lo, 'R')
-    fwhm_pixel_num = R_interp / R_gaussian_kernel
-    gs_array = generate_gaussian_kernel_array(fwhm_pixel_num, KERNEL_LENGTH_FWHM*fwhm_pixel_num)
-    gs_array_len = len(gs_array)
-    gs_array_arm = (gs_array_len-1)/2.
+    gk_array = generate_gaussian_kernel_array(over_sample,
+                                              gaussian_kernel_sigma_num)
+    gk_len = len(gk_array)
+    gk_len_half = (gk_len - 1) / 2.
 
-    # 4. convolution
+    # 6. convolution
     if verbose:
-        print '@Cham: spectrum convolution start ...'
-        print '@Cham: R_hi:              %.2f' % R_hi
-        print '@Cham: R_hi_specmax:      %.2f' % R_hi_specmax
-        print '@Cham: R_interp:          %.2f' % R_interp
-        print '@Cham: R_lo:              %.2f' % R_lo
-        print '@Cham: R_gaussian_kernel: %.2f' % R_gaussian_kernel
-        print '@Cham: convolution array length: [%d, %d]'\
-              % (len(flux_interp), gs_array_len)
-        print '@Cham: target spectrum R_lo: %.2f' % R_lo
-        print '@Cham: spectrum convolving ...'
-        print '@Cham: estimated convolution time: %.2f seconds ...' \
-              % (len(flux_interp)*gs_array_len/55408./657.*0.05)
-        start_conv = datetime.datetime.now()
-    convolved_flux = np.convolve(flux_interp, gs_array)[gs_array_arm:-gs_array_arm]
-    if verbose:
-        stop_conv = datetime.datetime.now()
-        print '@Cham: spectrum convolution complete ...'
-        print '@Cham: convolution time spent: %.2f seconds' \
-              % (stop_conv-start_conv).total_seconds()
+        print '@Cham: convolution ...'
+    convolved_flux = np.convolve(flux_interp, gk_array)[gk_len_half:-gk_len_half]
 
-    # 5. find new wave array
+    # 7. find new wave array
     if wave_new is None:
-        # need to find new wave
+        # wave_new is None
         # default: 5 times over-sample
         if verbose:
             print '@Cham: using default 5 times over-sample wave array ...'
-        wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1], wave_new_oversample*R_lo)
+        wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1],
+                                         R_lo, wave_new_oversample)
     elif np.isscalar(wave_new):
-        # wave_new specifies the new wave array resampling rate
+        # wave_new specifies the new wave array over_sampling_lo rate
         # default is 5. times over-sample
         if verbose:
             print '@Cham: using user-specified %.2f times over-sample wave array ...' % wave_new
-        wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1], wave_new*R_lo)
+        wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1],
+                                         R_lo, wave_new)
     else:
+        # wave_new specified
         if verbose:
             print '@Cham: using user-specified wave array ...'
 
-    # 6. interpolate convolved flux to new wave array
+    # 8. interpolate convolved flux to new wave array
     if verbose:
         print '@Cham: interpolating convolved spectrum to new wave array ...'
     flux_new = pchip_interpolate(wave_interp, convolved_flux, wave_new)
@@ -387,7 +502,7 @@ def conv_spec(spec, R_hi, R_lo, R_interp=None, wave_new=None,
         print '@Cham: total time spent: %.2f seconds' % (stop-start).total_seconds()
         print '--------------------------------------------------------------'
 
-    return spec_quick_init(wave_new, flux_new)
+    return spec_quick_init(wave_new, flux_new), gk_len_half
 
 
 def test_bc03_degrade_to_R500():
@@ -403,14 +518,21 @@ def test_bc03_degrade_to_R500():
     spec = spec.extract_chunk_wave_interval([[4000., 8000.]])[0]
 
     # 2.convolve spectum
-    spec_ = conv_spec(spec, 2000, 500, verbose=True)
+    spec_,gk_len_hf = conv_spec(spec, lambda x: 0.2*x, lambda x: 0.1*x,
+                                over_sample_additional=3.,
+                                gaussian_kernel_sigma_num=6.,
+                                wave_new=None,
+                                wave_new_oversample=5.,
+                                verbose=False)
     spec_.pprint()
 
+    print find_R_for_wave_array(spec_['wave'])
     # 3.plot results
-    fig = plt.figure()
-    plt.plot(spec['wave'], spec['flux'])
-    plt.plot(spec_['wave'], spec_['flux'], 'r')
-    fig.show()
+    # fig = plt.figure()
+    # plt.plot(spec['wave'], spec['flux'])
+    # plt.plot(spec_['wave'], spec_['flux'], 'r')
+    # fig.show()
+    # fig.savefig(''')
     print '@Cham: test OK ...'
 
 
