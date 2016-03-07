@@ -15,7 +15,7 @@ Created on
 
 Modifications
 -------------
--
+- Sun Mar   6 21:00:00 2016     convolve from arbitrary R_hi to arbitrary R_lo
 
 Aims
 ----
@@ -51,17 +51,17 @@ import astropy.constants as const
 import astropy.units as u
 from inspect import isfunction
 from scipy.interpolate import pchip_interpolate
-from yt.analysis_modules.level_sets.clump_tools import return_all_clumps
+from .spec import spec_quick_init
 
-from bopy.spec.spec import spec_quick_init
-
-OVER_SAMPLING = 10.
-# threshold for R_hi_spec/R_hi
-# if R_hi_spec > OVER_SAMPLING*R_hi, then R_interp = R_hi_spec
-# else R_interp = OVER_SAMPLING * np.max([R_hi_spec, R_hi])
-
-KERNEL_LENGTH_FWHM = 4.24
-# kernel array length is 4.24 times FWHM, i.e., 10 sigma
+# deprecated constants ########################################################
+# OVER_SAMPLING = 10.
+# # threshold for R_hi_spec/R_hi
+# # if R_hi_spec > OVER_SAMPLING*R_hi, then R_interp = R_hi_spec
+# # else R_interp = OVER_SAMPLING * np.max([R_hi_spec, R_hi])
+#
+# KERNEL_LENGTH_FWHM = 4.24
+# # kernel array length is 4.24 times FWHM, i.e., 10 sigma
+# #############################################################################
 
 
 # ########################################################################### #
