@@ -51,6 +51,8 @@ import astropy.constants as const
 import astropy.units as u
 from inspect import isfunction
 from scipy.interpolate import pchip_interpolate
+from yt.analysis_modules.level_sets.clump_tools import return_all_clumps
+
 from bopy.spec.spec import spec_quick_init
 
 OVER_SAMPLING = 10.
@@ -394,7 +396,8 @@ def conv_spec(spec,
               gaussian_kernel_sigma_num=8.,
               wave_new=None,
               wave_new_oversample=5.,
-              verbose=True):
+              verbose=True,
+              return_type='spec'):
     """ to convolve high-R spectrum to low-R spectrum
 
     Parameters
@@ -415,13 +418,14 @@ def conv_spec(spec,
         if voctor: this specifies the new wave_new array
     verbose: bool
         if True, print the details on the screen
+    return_type: string
+        if 'array': return wave and flux as array
+        if 'spec': retrun spec object
 
     Returns
     -------
     spec: bopy.spec.spec.Spec
         Spec, based on astropy.table.Table class
-    gk_len_half: float
-        number of pixels in the head and tail which is bad
 
     """
     if verbose:
@@ -504,7 +508,10 @@ def conv_spec(spec,
         print '@Cham: total time spent: %.2f seconds' % (stop-start).total_seconds()
         print '---------------------------------------------------------------'
 
-    return spec_quick_init(wave_new, flux_new)
+    if return_type == 'array':
+        return wave_new, flux_new
+    elif return_type == 'spec':
+        return spec_quick_init(wave_new, flux_new)
 
 
 def test_bc03_degrade_to_R500():
