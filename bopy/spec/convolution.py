@@ -427,7 +427,7 @@ def conv_spec(spec,
     if verbose:
         start = datetime.datetime.now()
         print '---------------------------------------------------------------'
-        print '@Cham: Welcome to use Bo Zhang''s spectral convolution code ...'
+        print '@Cham: Welcome to the spectral convolution code developed by Bo Zhang (@NAOC) ...'
 
     # 1. re-format R_hi & R_lo
     assert R_hi is not None and R_lo is not None
@@ -471,6 +471,8 @@ def conv_spec(spec,
     # 6. convolution
     if verbose:
         print '@Cham: convolution ...'
+        print '@Cham: estimated convolution time: %.2f seconds ...'\
+              % (len(flux_interp)*gk_len/55408./657.*0.05)
     convolved_flux = np.convolve(flux_interp, gk_array)[gk_len_half:-gk_len_half]
 
     # 7. find new wave array
@@ -500,9 +502,9 @@ def conv_spec(spec,
     if verbose:
         stop = datetime.datetime.now()
         print '@Cham: total time spent: %.2f seconds' % (stop-start).total_seconds()
-        print '--------------------------------------------------------------'
+        print '---------------------------------------------------------------'
 
-    return spec_quick_init(wave_new, flux_new), gk_len_half
+    return spec_quick_init(wave_new, flux_new)
 
 
 def test_bc03_degrade_to_R500():
@@ -518,12 +520,12 @@ def test_bc03_degrade_to_R500():
     spec = spec.extract_chunk_wave_interval([[4000., 8000.]])[0]
 
     # 2.convolve spectum
-    spec_,gk_len_hf = conv_spec(spec, lambda x: 0.2*x, lambda x: 0.1*x,
-                                over_sample_additional=3.,
-                                gaussian_kernel_sigma_num=6.,
-                                wave_new=None,
-                                wave_new_oversample=5.,
-                                verbose=False)
+    spec_ = conv_spec(spec, lambda x: 0.2*x, lambda x: 0.1*x,
+                      over_sample_additional=3.,
+                      gaussian_kernel_sigma_num=6.,
+                      wave_new=None,
+                      wave_new_oversample=5.,
+                      verbose=False)
     spec_.pprint()
 
     print find_R_for_wave_array(spec_['wave'])
