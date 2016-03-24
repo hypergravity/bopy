@@ -22,8 +22,13 @@ if __name__ == '__main__':
             "Topic :: Scientific/Engineering :: Physics"],
         package_dir={'bopy/': ''},
         packages=['bopy',
-                  'bopy/spec', 'bopy/core', 'bopy/mcmctools', 'bopy/obstools',
-                  'bopy/obstools/Xinglong216HRS'
+                  'bopy/spec',
+                  'bopy/core',
+                  'bopy/mcmctools',
+                  'bopy/obstools',
+                  'bopy/obstools/Xinglong216HRS',
+                  'bopy/helpers',
+                  'bopy/helpers/ezpadova'
                   ],
         package_data={'bopy/data': [''],
                       "":          ["LICENSE"]},
