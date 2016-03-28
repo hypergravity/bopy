@@ -121,8 +121,10 @@ def get_isochrone_grid(grid_feh,
             isoc_list.append(
                 Table(cmd.get_one_isochrone(grid_list_[0], grid_list_[1], model=model, phot=phot, **kwargs).data))
     print('@Cham: got all requested isochrones!')
+    print('@Cham: -----------------------------------------------------------')
     print('@Cham: colnames are:')
     print(isoc_list[0].colnames)
+    print('@Cham: -----------------------------------------------------------')
     return vgrid_feh, vgrid_logt, isoc_list, grid_list
 
 
@@ -155,6 +157,7 @@ def interpolate_to_cube(grid_feh, grid_logt, isoc_list, grid_list, grid_mini, cu
     cube_logt, cube_feh, cube_mini, = np.meshgrid(grid_logt, grid_feh, grid_mini)
     cube_size = cube_feh.shape
     print('@Cham: cube shape: ', cube_size)
+    print('@Cham: -----------------------------------------------------------')
 
     # determine cube-quantities
     if len(cube_quantities) == 0:
@@ -166,25 +169,28 @@ def interpolate_to_cube(grid_feh, grid_logt, isoc_list, grid_list, grid_mini, cu
         cube_quantities = colnames[3:]
         print('@Cham: I will now begin interpolating these quantities into cubes ...')
         print(cube_quantities)
+        print('@Cham: -----------------------------------------------------------')
     else:
         print('@Cham: I will now begin interpolating these quantities into cubes ...')
         print(cube_quantities)
+        print('@Cham: -----------------------------------------------------------')
 
     # smoothing along M_ini
     for i in xrange(len(isoc_list)):
         # Tablize
         if not isinstance(isoc_list[i], Table):
             isoc_list[i] = Table(isoc_list[i].data)
-        print '@Cham: smoothing isochrones [%s/%s] ...' % (i, len(isoc_list))
+        print '@Cham: smoothing isochrones [%s/%s] ...' % (i+1, len(isoc_list))
         # smoothing M_ini
         ind_same_mini = np.hstack((False, np.diff(isoc_list[i]['M_ini'].data)==0))
         sub_same_mini = np.arange(len(isoc_list[i]))[ind_same_mini]
         isoc_list[i].remove_rows(sub_same_mini)
         print '@Cham: removing %s rows for this table ...' % len(sub_same_mini)
+    print('@Cham: -----------------------------------------------------------')
 
     # interpolation
     cube_data_list = [cube_feh, cube_logt, cube_mini]
-    cube_name_list = ['feh', 'logt', 'mini']
+    cube_name_list = ['feh', 'logt', 'M_ini']
     for k in xrange(len(cube_quantities)):
         cube_name = cube_quantities[k]
         c = 0
@@ -193,16 +199,19 @@ def interpolate_to_cube(grid_feh, grid_logt, isoc_list, grid_list, grid_mini, cu
             for j in xrange(len(grid_logt)):
                 this_isoc = isoc_list[c]
                 cube_data[i, j, :] = pchip_interpolate(this_isoc['M_ini'].data, this_isoc[cube_name].data, grid_mini)
-                print('@Cham: interpolating cube quantity [%s] (%s/%s) (%s/%s) ...'
+                print('@Cham: interpolating cube quantity [%s] {quantity: %s/%s} (%s/%s) ...'
                       % (cube_name, k+1, len(cube_quantities), c+1, len(grid_feh)*len(grid_logt)))
                 c += 1
         cube_data_list.append(cube_data)
         cube_name_list.append(cube_name)
+    print('@Cham: -----------------------------------------------------------')
+
     return cube_data_list, cube_name_list
 
 
-def _to_fits_hdulist(cube_data_list, cube_name_list):
+def cubelist_to_hdulist(cube_data_list, cube_name_list):
     """ transform data cubes into fits HDU list """
+    print('@Cham: transforming data cubes into HDU list ...')
     # construct Primary header
     header = fits.Header()
     header['author'] = 'Bo Zhang (@NAOC)'
@@ -216,19 +225,27 @@ def _to_fits_hdulist(cube_data_list, cube_name_list):
     for i in xrange(len(cube_data_list)):
         hl.append(fits.hdu.ImageHDU(data=cube_data_list[i], name=cube_name_list[i]))
 
+    print('@Cham: -----------------------------------------------------------')
     return fits.HDUList(hl)
 
 
 def test():
     grid_logt = [6, 7., 9]
     grid_feh  = [-2.2, -1., 0, 1., 10]
-    vgrid_feh, vgrid_logt, isoc_list, grid_list = get_isochrone_grid(
-        grid_feh, grid_logt, model='parsec12s', phot='sloan', parflag=False)
     grid_mini = np.arange(0.01, 12, 0.01)
+
+    vgrid_feh, vgrid_logt, isoc_list, grid_list = get_isochrone_grid(
+        grid_feh, grid_logt, model='parsec12s', phot='sloan', parflag=True)
+
     cube_data_list, cube_name_list = interpolate_to_cube(
-        vgrid_feh, vgrid_logt, isoc_list, grid_list, grid_mini, cube_quantities=['M_act', 'g', 'r'])
-    hl = _to_fits_hdulist(cube_data_list,cube_name_list)
+        vgrid_feh, vgrid_logt, isoc_list, grid_list, grid_mini,
+        cube_quantities=['M_act', 'g', 'r'])
+
+    hl = cubelist_to_hdulist(cube_data_list,cube_name_list)
+
+    return hl
     # hl.writeto('')
+
 
 if __name__ == '__main__':
     test()
