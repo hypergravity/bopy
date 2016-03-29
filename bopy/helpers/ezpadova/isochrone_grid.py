@@ -229,26 +229,66 @@ def cubelist_to_hdulist(cube_data_list, cube_name_list):
     return fits.HDUList(hl)
 
 
-def test():
+def combine_isochrones(isoc_list):
+    """ combine isochrone Tables into 1 Table"""
+    if isinstance(isoc_list[0], Table):
+        # assume that these data are all Table
+        comb_isoc = vstack(isoc_list)
+    else:
+        for i in xrange(isoc_list):
+            isoc_list[i] = Table(isoc_list[i])
+        comb_isoc = vstack(isoc_list)
+    return comb_isoc
+
+
+def write_isoc_list(isoc_list,
+                    grid_list,
+                    dirpath='comb_isoc_parsec12s_sloan',
+                    extname='.fits',
+                    Zsun=0.0152):
+    """ write isochrone list into separate tables """
+    assert len(isoc_list) == len(grid_list)
+    for i in xrange(len(isoc_list)):
+        fp = dirpath + \
+            '_ZSUN' + ('%.5f' % Zsun).zfill(7) + \
+            '_LOGT' + ('%.3f' % np.log10(grid_list[i][0])).zfill(6) + \
+            '_FEH' + ('%.3f' % np.log10(grid_list[i][1]/Zsun)).zfill(6) + \
+            extname
+        print('@Cham: writing table [%s] [%s/%s]...' % (fp, i+1, len(isoc_list)))
+        isoc_list[i].write(fp, overwrite=True)
+    return
+
+
+def _test():
     grid_logt = [6, 7., 9]
     grid_feh  = [-2.2, -1., 0, 1., 10]
     grid_mini = np.arange(0.01, 12, 0.01)
 
+    # get isochrones
     vgrid_feh, vgrid_logt, isoc_list, grid_list = get_isochrone_grid(
         grid_feh, grid_logt, model='parsec12s', phot='sloan', parflag=True)
 
+    # transform into cube data
     cube_data_list, cube_name_list = interpolate_to_cube(
         vgrid_feh, vgrid_logt, isoc_list, grid_list, grid_mini,
         cube_quantities=['M_act', 'g', 'r'])
 
+    # cube HDUs
     hl = cubelist_to_hdulist(cube_data_list,cube_name_list)
+    hl.info()
+    # hl.writeto()
 
+    # combine isochrone tables
+    comb_isoc = combine_isochrones(isoc_list)
+    # comb_isoc.write()
+
+    # write isochrone list into separate files
+    # write_isoc_list(isoc_list, grid_list, '/pool/comb_isoc')
     return hl
-    # hl.writeto('')
 
 
 if __name__ == '__main__':
-    test()
+    _test()
 
 
 
