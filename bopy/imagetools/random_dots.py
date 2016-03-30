@@ -87,10 +87,10 @@ def random_dots(immask, n_dots=10, mindist=None, n_loop_max=1E9):
                 c += 1
                 print('@Cham: got random dots [%s/%s] (y, x) = (%d,%d),  ...' % (c, n_dots, y_, x_))
         if c < n_dots:
-            print('@Cham: got all requested random dots successfully!')
+            print('@Cham: failed to get all requested random dots!')
             return x, y, False
         else:
-            print('@Cham: failed to get all requested random dots!')
+            print('@Cham: got all requested random dots successfully!')
             return x, y, True
 
 
