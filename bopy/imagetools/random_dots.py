@@ -75,15 +75,15 @@ def random_dots(immask, n_dots=10, mindist=None, n_loop_max=1E9):
         x[0], y[0] = _random_dot_valid(immask, sz)
         c = 1
         n_loop = 0
-        print('@Cham: got random dots [%s/%s] ...' % (c+1, n_dots))
+        print('@Cham: got random dots [%s/%s] ...' % (c, n_dots))
         while c < n_dots and n_loop < n_loop_max:
             n_loop += 1
             x_, y_ = _random_dot_valid(immask, sz)
             dist = ((x_-x[:c])/mindist_x)**2. + ((y_-y[:c])/mindist_y)**2.
-            if dist < 1.:
+            if np.all(dist.flatten()) < 1.:
                 x[c], y[c] = x_, y_
                 c += 1
-                print('@Cham: got random dots [%s/%s] ...' % (c+1, n_dots))
+                print('@Cham: got random dots [%s/%s] ...' % (c, n_dots))
         if c < n_dots:
             return x, y, False
         else:
