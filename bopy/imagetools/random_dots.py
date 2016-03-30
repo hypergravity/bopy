@@ -77,15 +77,15 @@ def random_dots(immask, n_dots=10, mindist=None, n_loop_max=1E9):
         x[0], y[0] = _random_dot_valid(immask, sz)
         c = 1
         n_loop = 0
-        print('@Cham: got random dots [%s/%s] ...' % (c, n_dots))
+        print('@Cham: got random dots [%s/%s] (y, x) = (%d,%d),  ...' % (c, n_dots, y[0], x[0]))
         while c < n_dots and n_loop < n_loop_max:
             n_loop += 1
             x_, y_ = _random_dot_valid(immask, sz)
             dist = ((x_-x[:c])/mindist_x)**2. + ((y_-y[:c])/mindist_y)**2.
-            if np.all(dist.flatten()) > 1.:
+            if np.all(dist.flatten() > 1.):
                 x[c], y[c] = x_, y_
                 c += 1
-                print('@Cham: got random dots [%s/%s] ...' % (c, n_dots))
+                print('@Cham: got random dots [%s/%s] (y, x) = (%d,%d),  ...' % (c, n_dots, y_, x_))
         if c < n_dots:
             print('@Cham: got all requested random dots successfully!')
             return x, y, False
@@ -113,5 +113,17 @@ def _test():
     print np.ndim(immask)
 
 
+def _test2():
+    imdata = np.ones((700,700))
+    for i in xrange(700):
+        for j in xrange(700):
+            if i < 200:
+                imdata[i, j] = np.nan
+    immask = np.logical_not(np.isnan(imdata))
+    print np.sum(immask)
+    x,y,flag = random_dots(immask, 30, (5., 5.),1E9)
+    print x,y,flag
+
+
 if __name__ == '__main__':
-    _test()
+    _test2()
