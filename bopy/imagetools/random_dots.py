@@ -39,6 +39,8 @@ def random_dots(immask, n_dots=10, mindist=None, n_loop_max=1E9):
     mindist: None|tuple of float
         if None, no criteria on distance between dots
         if specified, the min distance between dots is set
+    n_loop_max: int
+        max loop can be used to generate random dots
 
     Returns
     -------
@@ -80,13 +82,15 @@ def random_dots(immask, n_dots=10, mindist=None, n_loop_max=1E9):
             n_loop += 1
             x_, y_ = _random_dot_valid(immask, sz)
             dist = ((x_-x[:c])/mindist_x)**2. + ((y_-y[:c])/mindist_y)**2.
-            if np.all(dist.flatten()) < 1.:
+            if np.all(dist.flatten()) > 1.:
                 x[c], y[c] = x_, y_
                 c += 1
                 print('@Cham: got random dots [%s/%s] ...' % (c, n_dots))
         if c < n_dots:
+            print('@Cham: got all requested random dots successfully!')
             return x, y, False
         else:
+            print('@Cham: failed to get all requested random dots!')
             return x, y, True
 
 
