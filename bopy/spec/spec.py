@@ -68,10 +68,10 @@ class Spec(Table):
             self['flux'] = flux_norm
         else:
             if 'ivar' not in self.colnames:
-                self.add_column(Column(flux_norm, 'flux_norm'))
+                self.add_column(Column(flux_norm.flatten(), 'flux_norm'))
             else:
-                self.add_columns([Column(flux_norm, 'flux_norm'),
-                                  Column(ivar_norm, 'ivar_norm')])
+                self.add_columns([Column(flux_norm.flatten(), 'flux_norm'),
+                                  Column(ivar_norm.flatten(), 'ivar_norm')])
 
     def norm_spec_pixel(self, norm_wave):
         sub_nearest_pixel = np.argsort(np.abs(self['wave']-norm_wave))[0]
