@@ -26,6 +26,7 @@ Aims
 import os
 import numpy as np
 from astropy.io import fits
+from astropy.table import Table
 from .spec import Spec
 
 
@@ -37,12 +38,23 @@ def reconstruct_wcs_coord_from_fits_header(hdr, dim=1):
     # get keywords
     crval = hdr['CRVAL%d' % dim]
     cdelt = hdr['CDELT%d' % dim]
-    crpix = hdr['CRPIX%d' % dim]
+    try:
+        crpix = hdr['CRPIX%d' % dim]
+    except(KeyError):
+        crpix = 1
     naxis = hdr['NAXIS%d' % dim]
 
     # reconstruct wcs coordinates
     coord = np.arange(1 - crpix, naxis + 1 - crpix) * cdelt + crval
     return coord
+
+
+def read_spectrum_phoenix_r10000(fp):
+    """ read spectrum from PHOENIX R10000 """
+    hl = fits.open(fp)
+    wave = np.e ** reconstruct_wcs_coord_from_fits_header(hl[0].header)
+    flux = hl[0].data
+    return Table(data=[wave, flux], names=['wave', 'flux'])
 
 
 def read_spectrum_elodie_r42000(fp):
