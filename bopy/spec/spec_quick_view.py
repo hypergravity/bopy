@@ -362,12 +362,12 @@ def test_spec_quick_view():
     bc03dir = '/home/cham/PycharmProjects/bopy/bopy/data/model_bc03/'
 
     # prepare wave_intervals
-    wave_intervals = [[5775, 5785], [6280., 6290]]
+    wave_intervals = [[5750., 5840.], [6254., 6344.]]
 
     # break spectra into chunks
     print('@Cham: loading BC03 spectra ...')
     spec_list = []
-    for i in xrange(10):
+    for i in xrange(15):
         fp = bc03dir + bc03cat['specfile'][i]
         spec = np.loadtxt(fp)
         spec = Spec(Table(spec, names=['wave', 'flux']))
@@ -383,20 +383,20 @@ def test_spec_quick_view():
     ax, spec_chunk_list, wave_offset, offset_specs, xlim = \
         spec_quick_view(ax,
                         spec_list,
-                        norm_type='continuum',
+                        norm_type='chunk_median',
                         q=0.90,
                         delta_lambda=100.,
                         wave_intervals=wave_intervals,
-                        wave_centers=[5780.1, 6284.1],
+                        wave_centers=[5780., 6284.],
                         flux_amp=None,
                         xtick_modify=True,
-                        xtick_step=50.,
-                        xtick_gap_fraction=0.02,
+                        xtick_step=5.,
+                        xtick_gap_fraction=0.05,
                         xtick_format_str=('%.0f', '%.1f'),
-                        xtick_label_type='velocity',
+                        xtick_label_type='wavelength',
                         offset_perspec=0.05,
                         verbose=True,
-                        ls='--',
+                        ls='-',
                         c='r')
 
     spec_quick_view_fiducial(ax, offset_specs, None, 'k--')
