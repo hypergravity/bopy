@@ -389,7 +389,8 @@ def generate_gaussian_kernel_array(over_sample_Rgk, sigma_num):
     return normalized_gaussian_array(xgs, b=0., c=sigma_pixel_num)
 
 
-def conv_spec(spec,
+def conv_spec(wave,
+              flux,
               R_hi=2000.,
               R_lo=500.,
               over_sample_additional=3.,
@@ -397,13 +398,15 @@ def conv_spec(spec,
               wave_new=None,
               wave_new_oversample=5.,
               verbose=True,
-              return_type='spec'):
+              return_type='array'):
     """ to convolve high-R spectrum to low-R spectrum
 
     Parameters
     ----------
-    spec: spec object (Table with 'wave' and 'flux' column)
-        the original spectrum
+    wave: array
+        wavelength
+    flux: array
+        flux array
     R_hi: float or function
         higher resolution
     R_lo: float or function
@@ -450,19 +453,19 @@ def conv_spec(spec,
     Rgk = find_Rgk(R_hi_, R_lo_, over_sample=1.)
 
     # 3. find appropriate over_sample
-    R_hi_specmax = find_R_max_for_wave_array(spec['wave'])
-    R_hi_max = np.max(R_hi_(spec['wave']))
+    R_hi_specmax = find_R_max_for_wave_array(wave)
+    R_hi_max = np.max(R_hi_(wave))
     over_sample = over_sample_additional * np.fix(np.max([
-        R_hi_specmax/Rgk(spec['wave']), R_hi_max/Rgk(spec['wave'])]))
+        R_hi_specmax/Rgk(wave), R_hi_max/Rgk(wave)]))
 
     # 4. find wave_interp & flux_interp
     if verbose:
         print '@Cham: interpolating orignal spectrum to wave_interp ...'
-    wave_max = np.max(spec['wave'])
-    wave_min = np.min(spec['wave'])
+    wave_max = np.max(wave)
+    wave_min = np.min(wave)
     wave_interp = generate_wave_array_R(wave_min, wave_max,
                                         Rgk, over_sample=over_sample)
-    flux_interp = pchip_interpolate(spec['wave'], spec['flux'], wave_interp)
+    flux_interp = pchip_interpolate(wave, flux, wave_interp)
 
     # 5. generate Gaussian Kernel array
     if verbose:
@@ -527,7 +530,8 @@ def test_bc03_degrade_to_R500():
     spec = spec.extract_chunk_wave_interval([[4000., 8000.]])[0]
 
     # 2.convolve spectum
-    spec_ = conv_spec(spec, lambda x: 0.2*x, lambda x: 0.1*x,
+    spec_ = conv_spec(spec['wave'], spec['flux'],
+                      lambda x: 0.2*x, lambda x: 0.1*x,
                       over_sample_additional=3.,
                       gaussian_kernel_sigma_num=6.,
                       wave_new=None,
@@ -538,7 +542,7 @@ def test_bc03_degrade_to_R500():
     print find_R_for_wave_array(spec_['wave'])
     # 3.plot results
     # fig = plt.figure()
-    # plt.plot(spec['wave'], spec['flux'])
+    # plt.plot(wave, flux)
     # plt.plot(spec_['wave'], spec_['flux'], 'r')
     # fig.show()
     # fig.savefig(''')
