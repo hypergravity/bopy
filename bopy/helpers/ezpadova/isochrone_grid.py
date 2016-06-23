@@ -28,7 +28,7 @@ import numpy as np
 from bopy.helpers.ezpadova import cmd
 from astropy.table import Table, vstack, Column
 from astropy.io import fits
-from scipy.interpolate import pchip_interpolate
+from scipy.interpolate import PchipInterpolator
 from joblib import Parallel, delayed
 
 
@@ -105,6 +105,9 @@ def get_isochrone_grid(grid_feh,
     for grid_feh_ in vgrid_feh:
         for grid_logt_ in vgrid_logt:
             grid_list.append((10.**grid_logt_, 10.**grid_feh_*Zsun))
+
+    print('@Cham: you have requested for %s isochrones!')
+    print('@Cham: -----------------------------------------------------------')
 
     # get isochrones
     if parflag:
@@ -198,7 +201,8 @@ def interpolate_to_cube(grid_feh, grid_logt, isoc_list, grid_list, grid_mini, cu
         for i in xrange(len(grid_feh)):
             for j in xrange(len(grid_logt)):
                 this_isoc = isoc_list[c]
-                cube_data[i, j, :] = pchip_interpolate(this_isoc['M_ini'].data, this_isoc[cube_name].data, grid_mini)
+                P = PchipInterpolator(this_isoc['M_ini'].data, this_isoc[cube_name].data, extrapolate=False)
+                cube_data[i, j, :] = P(grid_mini)
                 print('@Cham: interpolating cube quantity [%s] {quantity: %s/%s} (%s/%s) ...'
                       % (cube_name, k+1, len(cube_quantities), c+1, len(grid_feh)*len(grid_logt)))
                 c += 1
@@ -260,6 +264,7 @@ def write_isoc_list(isoc_list,
 
 
 def _test():
+    # set grid
     grid_logt = [6, 7., 9]
     grid_feh  = [-2.2, -1., 0, 1., 10]
     grid_mini = np.arange(0.01, 12, 0.01)
@@ -274,7 +279,7 @@ def _test():
         cube_quantities=['M_act', 'g', 'r'])
 
     # cube HDUs
-    hl = cubelist_to_hdulist(cube_data_list,cube_name_list)
+    hl = cubelist_to_hdulist(cube_data_list, cube_name_list)
     hl.info()
     # hl.writeto()
 
