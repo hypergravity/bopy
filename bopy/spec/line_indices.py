@@ -18,6 +18,7 @@ Modifications
 - Wed Jul 29 21:46:00 2015    measure_line_index
 - Fri Nov 20 10:16:59 2015    reformatting code
 - Sat Jan 16 19:55:57 2016    migrate from spec.py
+- Thu Jul 14 23:57:57 2016    plot every line indice
 
 Aims
 ----
@@ -25,19 +26,23 @@ Aims
 
 """
 
-from astropy.io import fits
-from astropy.table import Table, Column
+import os
+import os.path
 import numpy as np
+import matplotlib.pyplot as plt
 from lmfit.models import LinearModel, GaussianModel
-from lmfit import minimize, Parameters, Model
+from .lamost import read_spectrum
 
-def measure_line_index(wave, flux, flux_err=None, mask=None,
+def measure_line_index(filepath, wave, flux, flux_err=None, mask=None,
                        line_info=None, num_refit=0, z=0.):
-    """measure line index / line EW
+    """Measure line index / line EW and have it plotted
 
     Parameters
     ----------
 
+    filepath: string
+        path of the spec document
+        
     wave: array
         wavelength vector
 
@@ -52,7 +57,8 @@ def measure_line_index(wave, flux, flux_err=None, mask=None,
         andmask or ormask (optional)
         If un-specified, auto-generate an np.ones array (evenly weighted)
 
-    line_info:   information about spectral line (dict)
+    line_info: dict
+        information about spectral line, eg:
         line_info_dib5780 = {'line_center':         5780,
                              'line_range':          (5775, 5785),
                              'line_shoulder_left':  (5755, 5775),
@@ -73,8 +79,7 @@ def measure_line_index(wave, flux, flux_err=None, mask=None,
         A dictionary type result of line index.
         If any problem encountered, return the default result (filled with nan).
 
-    """
-    
+    """ 
     try:
         ''' 1. get line information -------------------------------------------
         '''
@@ -124,14 +129,14 @@ def measure_line_index(wave, flux, flux_err=None, mask=None,
                                     par_linear,
                                     x=wave_shoulder,
                                     method='leastsq')
-        ''' 4. estimate continuum ---------------------------------------------
+        ''' 5. estimate continuum ---------------------------------------------
         '''
         cont_shoulder = out_linear.best_fit
         noise_std = np.std(flux_shoulder / cont_shoulder)
         cont_range = mod_linear.eval(out_linear.params, x=wave_range)
         resi_range = 1 - flux_range / cont_range
 
-        ''' 5.1 Integrated EW -------------------------------------------------
+        ''' 6.1 Integrated EW -------------------------------------------------
         '''
         # estimate EW_int
         # ---------------
@@ -148,7 +153,7 @@ def measure_line_index(wave, flux, flux_err=None, mask=None,
              np.random.randn(100, resi_range.size) * noise_std),
             wave_step))
 
-        ''' 5.2 gaussian model ------------------------------------------------
+        ''' 6.2 gaussian model ------------------------------------------------
         '''
         # estimate EW_fit
         # ---------------
@@ -175,7 +180,7 @@ def measure_line_index(wave, flux, flux_err=None, mask=None,
             'mod_gauss_center_std':     np.nan,
             'mod_gauss_sigma_std':      np.nan}
 
-        ''' 6. add noise and re-fit +++++++++++++++++++++++++++++++++++++++++++
+        ''' 7. add noise and re-fit -------------------------------------------
         '''
         # estimate EW_fit_err
         # -------------------
@@ -204,15 +209,69 @@ def measure_line_index(wave, flux, flux_err=None, mask=None,
             line_indx.update({'mod_gauss_amplitude_std': np.std(out_gauss_refit_amplitude),
                               'mod_gauss_center_std':    np.std(out_gauss_refit_center),
                               'mod_gauss_sigma_std':     np.std(out_gauss_refit_sigma)})
+
+        ''' 8. plot and save image --------------------------------------------
+        '''
+        save_image_line_indice(filepath, wave, flux, ind_range, cont_range, 
+                               ind_shoulder, line_info)
         return line_indx
     except Exception:
         return measure_line_index_null_result()  # necessary
 
 
+def save_image_line_indice(filepath, wave, flux, ind_range, cont_range, 
+                           ind_shoulder, line_info):
+    """Plot a line indice and save it as a .png document.
+    
+    Parameters
+    ----------
+    filepath: string
+        path of the spec document
+    
+    wave: array
+        wavelength vector
+        
+    flux: array
+        flux vector
+        
+    ind_range: array
+        bool indicating the middle range of a particular line
+        
+    cont_range: array
+        continuum flux of the middle range derived from linear model
+        
+    ind_shoulder: array
+        bool indicating the shoulder range of a particular line
+    
+    line_info: dict
+        information about spectral line, eg:
+        line_info_dib5780 = {'line_center':         5780,
+                             'line_range':          (5775, 5785),
+                             'line_shoulder_left':  (5755, 5775),
+                             'line_shoulder_right': (5805, 5825)}
+
+    """
+    #   We suppose that the filepath is 'Users/bo/spec-11111-GAC_082N27_B1_sp01-001.fits'
+    #   Then filepath[9:-5] = 'spec-11111-GAC_082N27_B1_sp01-001'
+    #   We want to save it in 'Users/bo/images'
+    #   name of the document is 'spec-11111-GAC_082N27_B1_sp01-001_line5780.png'
+    fig = plt.figure()
+    plt.plot(wave[ind_range], flux[ind_range], 'r-')
+    plt.plot(wave[ind_range], cont_range, 'b-')
+    plt.plot(wave[ind_shoulder],flux[ind_shoulder], 'm-')
+    plt.title(r'line' + str(line_info['line_center']) + r'of ' + filepath[9:-5])
+    add = filepath[9:-5] + '_line' + str(line_info['line_center'])
+    plt.title(r'line' + str(line_info['line_center']) + r'of ' + filepath[31:-1])
+    # fig.show()
+    fig.savefig('/Users/bo/images/'+add+'.png')
+
+
 def measure_line_index_null_result():
     """generate default value (nan/False) when measurement fails
 
-    :return: default value (nan/False)
+    Returns
+    -------
+    default value (nan/False)
     """
     return {'SN_local_flux_err':        np.nan,
             'SN_local_flux_std':        np.nan,
@@ -240,11 +299,17 @@ def measure_line_index_null_result():
 
 def measure_line_index_loopfun(filepath):
     """loopfun for measuring line index
-
-    :param filepath:    input file path
-    :return:
+    Parameters
+    ----------
+    filepath: string
+        path of the spec document
+    
+    Returns
+    -------
+    several line_indx: tuple
+        every line_indx is a dictionary type result of line index.
     """
-    num_refit = 50
+    num_refit = 0
     line_info_dib5780 = {'line_center':         5780,
                          'line_range':          (5775, 5785),
                          'line_shoulder_left':  (5755, 5775),
@@ -315,13 +380,30 @@ def measure_line_index_recover_spectrum(wave, params, norm=False):
     return flux
 
 
+def get_spectra_path():
+    """Get the path of several spectra.
+    
+    Returns
+    -------
+    filename: list
+        filepathes of all the spectra in finder '/Users/bo/spec/'
+    """
+    rootdir = '/Users/bo/spec'
+    filename = []
+    for parent,dirnames,filenames in os.walk(rootdir):
+        for filename in filenames:
+            filename.append(os.path.join(parent,filename))
+    n_plus1 = len(filename)
+    filename = filename[1:n_plus1]
+    return filename
+    
+
 def test_():
-    from bopy.spec import read_spectrum
-    filepath = '/home/cham/data/ToolFun/spectra/spec-1230-52672-0233.fits'
+    filepath = get_spectra_path()
     filesource = 'auto'
     #    filepath = r'/pool/LAMOST/DR2/spectra/fits/F5902/spec-55859-F5902_sp01-001.fits'
     #    filesource = 'lamost_dr2'
-    spec = read_spectrum(filepath, filesource)  # 10 loops, best of 3: 35.7 ms per loop
+    spec = read_spectrum(filepath[0], filesource)  # 10 loops, best of 3: 35.7 ms per loop
     #    line_indx_pack = measure_line_index_loopfun(filepath)
     z = 0.00205785
     line_info_dib6284 = {'line_center':         6285,
@@ -347,83 +429,55 @@ def test_():
 
 
 def test_measure_line_index():
-    from bopy.spec import read_spectrum, lamost_filepath
-    fp = '/home/cham/PycharmProjects/bopy/bopy/data/test_spectra/lamost_dr3/'\
-         + lamost_filepath('GAC_061N46_V3', 55939, 7, 78)
-    sp = read_spectrum(fp)
-    import matplotlib.pyplot as plt
-    fig = plt.figure()
-    plt.plot(sp['wave'], sp['flux'], 'b-')
-    plt.plot(sp['wave'], sp['flux']+sp['flux_err'], 'm-')
-    plt.plot(sp['wave'], sp['flux']-sp['flux_err'], 'm-')
-    plt.xlim((6563-200., 6563+200.))
-    plt.xlabel('wavelength')
-    plt.ylabel('flux')
-    fig.show()
-    fig.savefig('/home/cham/PycharmProjects/bopy/bopy/data/test_measure_line_index.png')
+    filepath = get_spectra_path()
+    n = len(filepath)
+    line_indx_star = [[]for i in range(3)]
+    for i in range(n):
+        line_indx = measure_line_index_loopfun(filepath[i])
+        line_indx_star[0].append(line_indx[0])
+        line_indx_star[1].append(line_indx[1])
+        line_indx_star[2].append(line_indx[2])
+    return line_indx_star
+
+
+def get_equivalent_width(line_indx_star):
+    EW = [[]for i in range(3)]
+    n = len(line_indx_star[0])
+    for i in range(3):
+        for j in range(n):
+            EW[i].append(line_indx_star[i][j]['EW_int'])
+    return EW
+    
+
+def plot_equivalent_width_hist(EW_star):
+    titles = ["5780","5797","6285"]
+    fig, axes = plt.subplots(1, 3, figsize=(8, 8))
+    for i in range(3):
+        ax = axes[0, i]
+        ax.hist(EW_star[i],facecolor='red',alpha=0.5)
+        ax.set_xlabel('equivalent width')
+        ax.set_ylabel('number')
+        ax.set_title('Histogram of equivalent width_line'+titles[i])
+        plt.tight_layout()
+    plt.show()
+
+    
+def plot_line_indices(EW_star):
+    titles = ["5780","5797","6285"]
+    fig, axes = plt.subplots(3,3,figsize=(64, 64))
+    for i in range(3):
+        for j in range(i+1):
+            ax = axes[i,j]
+            ax.set_title(titles[i]+" - "+titles[j],fontsize = 8)
+            ax.set_ylabel(titles[i], fontsize=8)
+            ax.set_xlabel(titles[j], fontsize=8)
+            ax.plot(EW_star[j],EW_star[i],'ob',markersize=3, alpha=0.5)
+    plt.tight_layout()
 
 
 # %% test
 if __name__ == '__main__':
-    test_measure_line_index()
-    # filepath = 'spec-6064-56097-0980.fits'
-    # filepath = 'spec-1230-52672-0233.fits'
-    # filepath = 'spec-56309-GAC088N20V1_sp08-126.fits'
-    # spec = read_spectrum(filepath, filesource)
-
-    # from spectrum import generate_lamost_filepath,read_spectrum,measure_line_index
-
-
-# %%
-# plt.plot(wave_range, flux_range, 'bo-')
-# plt.plot(wave_range, (1-mod_gauss.eval(par_gauss, x=wave_range))*cont_range,'k--')
-# plt.plot(wave_range, (1-out_gauss.best_fit)*cont_range, 'r-')
-# plt.show()
-
-# %%
-# plt.plot(wave_shoulder, flux_shoulder, 'bo-')
-# plt.plot(wave_shoulder, mod_linear.eval(par_linear, x=wave_shoulder),'k--')
-# plt.plot(wave_shoulder, out_linear.best_fit, 'r-')
-# plt.show()
-
-# %%
-# fig = plt.figure()
-# ax = fig.add_axes()
-# plt.plot(\
-#        wave,flux,'b-')
-# plt.plot(\
-#        wave_shoulder_left,\
-#        flux_shoulder_left,\
-#        'g-')
-# plt.plot(\
-#        wave_shoulder_right,\
-#        flux_shoulder_right,\
-#        'g-')
-# plt.plot(\
-#        hstack([wave_shoulder_left,wave_shoulder_right]),\
-#        pget.best_fit,\
-#        'r-')
-# plt.plot(\
-#        wave_range,flux_range,'b-')
-#
-# plt.xlim(6260,6330)
-# plt.ylim(50,80)
-
-
-
-
-# %%
-# linear_fun_slope = \
-#        (flux_shoulder_right_med-flux_shoulder_left_med)/\
-#        (wave_shoulder_right_med-wave_shoulder_left_med)
-# linear_fun_ofst  = \
-#        flux_shoulder_left_med-linear_fun_slope*wave_shoulder_left_med
-# linear_fun = lambda x: linear_fun_slope*x+linear_fun_ofst
-
-# fig = plt.figure()
-# ax = fig.add_axes()
-# plt.plot(spec['wave']/(1+z), spec['flux'], 'b')
-# plt.plot(spec['wave']/(1+z), spec['flux_err'], 'r')
-# plt.plot(wave, linear_fun(wave), 'r')
-# plt.plot(wave_shoulder_left, flux_shoulder_left, 'go')
-# plt.plot(wave_shoulder_right, flux_shoulder_right, 'go')
+    line_indx_star = test_measure_line_index()
+    EW_star = get_equivalent_width(line_indx_star)
+    #plot_equivalent_width_hist(EW_star)
+    #plot_line_indices(EW_star)
