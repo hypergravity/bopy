@@ -74,6 +74,7 @@ def measure_line_index(wave, flux, flux_err=None, mask=None,
         If any problem encountered, return the default result (filled with nan).
 
     """
+    
     try:
         ''' 1. get line information -------------------------------------------
         '''
