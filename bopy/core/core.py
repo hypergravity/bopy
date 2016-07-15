@@ -15,6 +15,7 @@ Created on
 
 Modifications
 -------------
+- Fri Jul 15 11:18:30 2016
 -
 
 Aims
@@ -78,18 +79,23 @@ def logical_or_ext(ind_list):
         ind0 = np.logical_or(ind0, ind.flatten())
     return ind0
 
-def core_print():
-    print 'bopy is coming!'
 
+def bopy_test():
+    """ To inform users whether the BOPY is correctly installed
 
+    Examples
+    --------
+    >>> from bopy.core import bopy_test
+    >>> bopy_test()
 
-
-
+    """
+    print("Welcome to ""BOPY""!")
 
 
 if __name__ == '__main__':
-    print logical_or_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
-    print logical_and_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
+    # print logical_or_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
+    # print logical_and_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
     print "@Cham: test passed ..."
+    bopy_test()
 
 
