@@ -100,7 +100,8 @@ def ccm(wave, Av=1., Rv=3.1, strict_ccm=False):
     return Al
 
 
-def unred_ccm(wave, flux, Av, Rv=3.1, z=None, strict_ccm=True):
+def dered_ccm(wave, flux, flux_err=None, Av=1.,
+              Rv=3.1, z=None, strict_ccm=True):
     """ un-redden the spectra by specified fore-groud extinction
 
     Parameters
@@ -213,9 +214,12 @@ def unred_ccm(wave, flux, Av, Rv=3.1, z=None, strict_ccm=True):
     Al = ccm(wave, Av=Av, Rv=Rv, strict_ccm=strict_ccm)
 
     # Now apply extinction correction to the input flux vector
-    flux_unred = flux * np.power(10.0, 0.4 * Al)
+    flux_dered = flux * np.power(10.0, 0.4 * Al)
 
-    return flux_unred
+    # Now apply extinction correction to the input flux_err vector
+    flux_err_dered = flux_err * np.power(10.0, 0.4 * Al)
+
+    return flux_dered, flux_err_dered
 
 
 # def R_z(wave, z, R_V=3.1, strict_ccm=0):
