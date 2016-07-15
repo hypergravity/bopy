@@ -1,9 +1,10 @@
 from distutils.core import setup
 
+
 if __name__ == '__main__':
     setup(
         name='bopy',
-        version='0.1.1',
+        version='0.2.0',
         author='Bo Zhang',
         author_email='bozhang@nao.cas.cn',
         # py_modules=['bopy','spec','core'],
@@ -33,5 +34,5 @@ if __name__ == '__main__':
         package_data={'bopy/data': [''],
                       "":          ["LICENSE"]},
         include_package_data=True,
-        requires=['numpy', 'scipy', 'matplotlib', 'astropy', 'pyraf']
+        requires=['numpy', 'scipy', 'matplotlib', 'astropy', 'lmfit']
     )
