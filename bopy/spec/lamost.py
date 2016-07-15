@@ -97,10 +97,67 @@ def _test_lamost_filepath():
     print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/pool/'))
 
 
+def sdss_filepath(plate, mjd, fiberid, dirpath=''):
+    """ generate file path of a LAMOST spectrum
+
+    Parameters
+    ----------
+    plate: string
+        plate
+
+    mjd: 5-digit integer
+        mjd (use lmjd rather than mjd for DR3 and after!)
+
+    fiberid: 4-digit integer
+        fiberid
+
+    dirpath: string
+        the root directory for storing spectra.
+
+    Rreturns
+    --------
+    filepath: string
+        the path of root dir of directory (prefix).
+        if un-specified, return file name.
+
+    """
+
+    if dirpath == '' or dirpath is None:
+        # return file name
+        if np.isscalar(mjd):
+            # if only input one item
+            return 'spec-%04d-%05d-%04d.fits' % (plate, mjd, fiberid)
+        else:
+            # if input a list of items
+            return np.array(['spec-%04d-%05d-%04d.fits' %
+                             (plate[i], mjd[i], fiberid[i])
+                             for i in xrange(len(mjd))])
+    else:
+        # return file path
+        if not dirpath[-1] == os.path.sep:
+            dirpath += os.path.sep
+
+        if np.isscalar(mjd):
+            # if only input one item
+            return '%s%s%sspec-%04d-%05d-%04d.fits' \
+                   % (dirpath, plate, os.path.sep, mjd, plate, fiberid)
+        else:
+            # if input a list of items
+            return np.array(['%s%s%sspec-%04d-%05d-%04d.fits' %
+                             (dirpath, plate[i], os.path.sep, mjd[i],
+                              plate[i], fiberid[i])
+                             for i in xrange(len(mjd))])
+
+
+def _test_sdss_filepath():
+    print(sdss_filepath(2238, 52059, 001, '/'))
+
+
 if __name__ == '__main__':
     print('')
     print('@Cham: start to test the module ...')
     print('')
     print('@Cham: testing ''lamost_filepath'' ...')
     _test_lamost_filepath()
+    _test_sdss_filepath()
     print('@Cham: OK')
