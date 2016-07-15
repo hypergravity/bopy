@@ -97,7 +97,7 @@ def _test_lamost_filepath():
     print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/pool/'))
 
 
-def sdss_filepath(plate, mjd, fiberid, dirpath=''):
+def sdss_filepath(plate, mjd, fiberid, dirpath='', extname='.fits'):
     """ generate file path of a LAMOST spectrum
 
     Parameters
@@ -114,6 +114,9 @@ def sdss_filepath(plate, mjd, fiberid, dirpath=''):
     dirpath: string
         the root directory for storing spectra.
 
+    extname: string
+        in case that users want to synthesize other data format
+
     Rreturns
     --------
     filepath: string
@@ -126,11 +129,11 @@ def sdss_filepath(plate, mjd, fiberid, dirpath=''):
         # return file name
         if np.isscalar(mjd):
             # if only input one item
-            return 'spec-%04d-%05d-%04d.fits' % (plate, mjd, fiberid)
+            return 'spec-%04d-%05d-%04d%s' % (plate, mjd, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['spec-%04d-%05d-%04d.fits' %
-                             (plate[i], mjd[i], fiberid[i])
+            return np.array(['spec-%04d-%05d-%04d%s' %
+                             (plate[i], mjd[i], fiberid[i], extname)
                              for i in xrange(len(mjd))])
     else:
         # return file path
@@ -139,13 +142,13 @@ def sdss_filepath(plate, mjd, fiberid, dirpath=''):
 
         if np.isscalar(mjd):
             # if only input one item
-            return '%s%s%sspec-%04d-%05d-%04d.fits' \
-                   % (dirpath, plate, os.path.sep, mjd, plate, fiberid)
+            return '%s%s%sspec-%04d-%05d-%04d%s' \
+                   % (dirpath, plate, os.path.sep, mjd, plate, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['%s%s%sspec-%04d-%05d-%04d.fits' %
+            return np.array(['%s%s%sspec-%04d-%05d-%04d%s' %
                              (dirpath, plate[i], os.path.sep, mjd[i],
-                              plate[i], fiberid[i])
+                              plate[i], fiberid[i], extname)
                              for i in xrange(len(mjd))])
 
 
