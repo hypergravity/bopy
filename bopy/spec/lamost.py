@@ -27,6 +27,7 @@ Aims
 """
 
 # from __future__ import print_function
+import os
 import numpy as np
 # from astropy.io import fits
 # from astropy.table import Table, Column
@@ -41,7 +42,7 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
         planid
 
     mjd: 5-digit integer
-        mjd
+        mjd (use lmjd rather than mjd for DR3 and after!)
 
     spid: 2-digit integer
         spid, the number of the spectrogragh
@@ -72,28 +73,30 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
                              for i in xrange(len(mjd))])
     else:
         # return file path
-        if not dirpath[-1] == '/':
-            dirpath += '/'
+        if not dirpath[-1] == os.path.sep:
+            dirpath += os.path.sep
 
         if np.isscalar(mjd):
             # if only input one item
-            return '%s%s/spec-%05d-%s_sp%02d-%03d.fits' % (dirpath, planid, mjd, planid, spid, fiberid)
+            return '%s%s%sspec-%05d-%s_sp%02d-%03d.fits' \
+                   % (dirpath, planid, os.path.sep, mjd, planid, spid, fiberid)
         else:
             # if input a list of items
-            return np.array(['%s%s/spec-%05d-%s_sp%02d-%03d.fits' %
-                             (dirpath, planid[i], mjd[i], planid[i], spid[i], fiberid[i])
+            return np.array(['%s%s%sspec-%05d-%s_sp%02d-%03d.fits' %
+                             (dirpath, planid[i], os.path.sep, mjd[i],
+                              planid[i], spid[i], fiberid[i])
                              for i in xrange(len(mjd))])
 
 
 def _test_lamost_filepath():
     """test function **lamost_filepath**
     """
-    print (lamost_filepath('GAC_061N46_V3', 55939, 7, 78))
-    print (lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/'))
+    print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78))
+    print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/'))
+    print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/pool'))
+    print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/pool/'))
 
 
-# -------------------------------------------------------------------------
-# Test the module ...
 if __name__ == '__main__':
     print('')
     print('@Cham: start to test the module ...')
