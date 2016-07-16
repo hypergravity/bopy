@@ -33,7 +33,7 @@ import numpy as np
 # from astropy.table import Table, Column
 
 
-def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
+def lamost_filepath(planid, mjd, spid, fiberid, dirpath='', extname='.fits'):
     """ generate file path of a LAMOST spectrum
 
     Parameters
@@ -65,11 +65,12 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
         # return file name
         if np.isscalar(mjd):
             # if only input one item
-            return 'spec-%05d-%s_sp%02d-%03d.fits' % (mjd, planid, spid, fiberid)
+            return 'spec-%05d-%s_sp%02d-%03d%s' \
+                   % (mjd, planid, spid, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['spec-%05d-%s_sp%02d-%03d.fits' %
-                             (mjd[i], planid[i], spid[i], fiberid[i])
+            return np.array(['spec-%05d-%s_sp%02d-%03d%s' %
+                             (mjd[i], planid[i], spid[i], fiberid[i], extname)
                              for i in xrange(len(mjd))])
     else:
         # return file path
@@ -78,13 +79,14 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath=''):
 
         if np.isscalar(mjd):
             # if only input one item
-            return '%s%s%sspec-%05d-%s_sp%02d-%03d.fits' \
-                   % (dirpath, planid, os.path.sep, mjd, planid, spid, fiberid)
+            return '%s%s%sspec-%05d-%s_sp%02d-%03d%s' \
+                   % (dirpath, planid, os.path.sep,
+                      mjd, planid, spid, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['%s%s%sspec-%05d-%s_sp%02d-%03d.fits' %
+            return np.array(['%s%s%sspec-%05d-%s_sp%02d-%03d%s' %
                              (dirpath, planid[i], os.path.sep, mjd[i],
-                              planid[i], spid[i], fiberid[i])
+                              planid[i], spid[i], fiberid[i], extname)
                              for i in xrange(len(mjd))])
 
 
@@ -142,13 +144,14 @@ def sdss_filepath(plate, mjd, fiberid, dirpath='', extname='.fits'):
 
         if np.isscalar(mjd):
             # if only input one item
-            return '%s%s%sspec-%04d-%05d-%04d%s' \
-                   % (dirpath, plate, os.path.sep, mjd, plate, fiberid, extname)
+            return '%s%04d%sspec-%04d-%05d-%04d%s' \
+                   % (dirpath, plate, os.path.sep,
+                      plate, mjd, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['%s%s%sspec-%04d-%05d-%04d%s' %
-                             (dirpath, plate[i], os.path.sep, mjd[i],
-                              plate[i], fiberid[i], extname)
+            return np.array(['%s%04d%sspec-%04d-%05d-%04d%s' %
+                             (dirpath, plate[i], os.path.sep, plate[i],
+                              mjd[i], fiberid[i], extname)
                              for i in xrange(len(mjd))])
 
 
