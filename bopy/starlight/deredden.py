@@ -216,10 +216,12 @@ def dered_ccm(wave, flux, flux_err=None, Av=1.,
     # Now apply extinction correction to the input flux vector
     flux_dered = flux * np.power(10.0, 0.4 * Al)
 
-    # Now apply extinction correction to the input flux_err vector
-    flux_err_dered = flux_err * np.power(10.0, 0.4 * Al)
+    if flux_err is not None:
+        # Now apply extinction correction to the input flux_err vector
+        flux_err_dered = flux_err * np.power(10.0, 0.4 * Al)
+        return flux_dered, flux_err_dered
 
-    return flux_dered, flux_err_dered
+    return flux_dered
 
 
 # def R_z(wave, z, R_V=3.1, strict_ccm=0):
