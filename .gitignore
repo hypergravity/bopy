@@ -1,7 +1,6 @@
 *.iml
 *.xml
-.idea*
-*.fits*
+*.fits
 *.aux
 *.dvi
 *.log
@@ -10,3 +9,7 @@
 *.pdf
 *.eps
 *.png
+.idea
+.ipynb_checkpoint
+*.ipynb
+bopy/data

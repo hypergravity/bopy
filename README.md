@@ -3,6 +3,8 @@ BOPY
 
 **Bo Zhang's python package**.
 
+- Github url: [https://github.com/hypergravity/bopy](https://github.com/hypergravity/bopy)
+- PYPI url: [https://pypi.python.org/pypi/bopy](https://pypi.python.org/pypi/bopy)
 
 AUTHOR
 ======
@@ -27,12 +29,16 @@ DOCUMENTATION
 Will be featured in the near future.
 
 
+INSTALL
+=======
+`sudo pip install -U bopy` or `pip install --user bopy`
+
+
 PYTHON VERSIONS AND DEPENDENCIES
 ================================
 
 - python 2.7.6
 - ipython 4.0.0
-
 - APLpy==1.0
 - ATpy==0.9.7
 - Astropysics==1.0
