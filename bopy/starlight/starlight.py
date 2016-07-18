@@ -28,6 +28,7 @@ Aims
 """
 
 
+import os
 import numpy as np
 
 __extra_comments__ = '''
@@ -664,10 +665,157 @@ def _test_starlight_config():
 class StarlightMask(object):
     """ StarlightMask class is to represent the Mask file object for STARLIGHT
     """
-    pass
+    line_ste = []
+    line_sky = []
+
 
 
 def _test_starlight_mask():
+    pass
+
+
+class StarlightOutput(object):
+    """ StarlightOutput class is to read/re-construct the STARLIGHT results
+    """
+    meta = dict(
+        arq_obs='',
+        arq_base='',
+        arq_masks='',
+        arq_config='',
+        N_base=0,
+        N_YAV_components=0,
+        i_FitPowerLaw=0,
+        alpha_PowerLaw=0,
+        red_law_option='',
+        q_norm=0,
+        l_ini=0.,
+        l_fin=0.,
+        dl=0.,
+        l_norm=0.,
+        llow_norm=0.,
+        lupp_norm=0.,
+        fobs_norm=0.,
+        llow_SN=0.,
+        lupp_SN=0.,
+        SN_in_SN_window=0.,
+        SN_in_norm_window=0.,
+        SN_err_in_SN_window=0.,
+        SN_err_in_norm_window=0.,
+        fscale_chi2=0.,
+        idum_orig=0,
+        NOl_eff=0,
+        Nl_eff=0,
+        Ntot_cliped=0,
+        clip_method='',
+        Nglobal_steps=0,
+        N_chains=0,
+        NEX0s_base=0,
+        Clip_Bug=0,
+        RC_Crash=0,
+        Burn_In_warning_flags=0,
+        n_censored_weights=0,
+        wei_nsig_threshold=0,
+        wei_limit=0,
+        idt_all=0,
+        wdt_TotTime=0.,
+        wdt_UsrTime=0.,
+        wdt_SysTime=0.,
+        chi2_Nl_eff=0.,
+        adev=0.,
+        sum_of_x=0.,
+        Flux_tot=0.,
+        Mini_tot=0.,
+        Mcor_tot=0.,
+        v0_min=0.,
+        vd_min=0.,
+        AV_min=0.,
+        YAV_min=0.)
+
+    def __init__(self, filepath):
+        """ initialize instance """
+        # assert filepath existence
+        try:
+            assert os.path.exists(filepath)
+        except AssertionError:
+            raise(AssertionError('@Cham: file does not exist! %s' % filepath))
+        # read header
+        # read blocks
+
+
+def read_starlight_output_header(lines):
+    """ read header of starlight output
+    Although this method is not elegant, it works!
+    """
+    # initial state False
+    state = False
+    # initialize meta
+    meta = dict()
+    try:
+        # Some input info
+        meta['arq_obs'] = lines[5].split('[')[0].strip()
+        meta['arq_base'] = lines[6].split('[')[0].strip()
+        meta['arq_masks'] = lines[7].split('[')[0].strip()
+        meta['arq_config'] = lines[8].split('[')[0].strip()
+        meta['N_base'] = np.int(lines[9].split('[')[0].strip())
+        meta['N_YAV_components'] = np.int(lines[10].split('[')[0].strip())
+        meta['i_FitPowerLaw'] = np.int(lines[11].split('[')[0].strip())
+        meta['alpha_PowerLaw'] = np.float(lines[12].split('[')[0].strip())
+        meta['red_law_option'] = lines[13].split('[')[0].strip()
+        meta['q_norm'] = np.float(lines[14].split('[')[0].strip())
+        # (Re)Sampling Parameters
+        meta['l_ini'] = np.float(lines[17].split('[')[0].strip())
+        meta['l_fin'] = np.float(lines[18].split('[')[0].strip())
+        meta['dl'] = np.float(lines[19].split('[')[0].strip())
+        # Normalization info
+        meta['l_norm'] = np.float(lines[22].split('[')[0].strip())
+        meta['llow_norm'] = np.float(lines[23].split('[')[0].strip())
+        meta['lupp_norm'] = np.float(lines[24].split('[')[0].strip())
+        meta['fobs_norm'] = np.float(lines[25].split('[')[0].strip())
+        # S/N
+        meta['llow_SN'] = np.float(lines[28].split('[')[0].strip())
+        meta['lupp_SN'] = np.float(lines[29].split('[')[0].strip())
+        meta['SN_in_SN_window'] = np.float(lines[30].split('[')[0].strip())
+        meta['SN_in_norm_window'] = np.float(lines[31].split('[')[0].strip())
+        meta['SN_err_in_SN_window'] = np.float(lines[32].split('[')[0].strip())
+        meta['SN_err_in_norm_window'] = np.float(lines[33].split('[')[0].strip())
+        meta['fscale_chi2'] = np.float(lines[34].split()[0].strip('['))
+        # etc... [ignored ugly data form! --> this makes me happy!]
+        meta['NOl_eff'] = np.int(lines[38].split('[')[0].strip())
+        meta['Nl_eff'] = np.int(lines[39].split('[')[0].strip())
+        lines_40_split = lines[40].split('[')[0].strip().split()
+        meta['Ntot_cliped'] = np.float(lines_40_split[0])
+        meta['clip_method'] = lines_40_split[1]
+        meta['Nglobal_steps'] = np.int(lines[41].split('[')[0].strip())
+        meta['N_chains'] = np.int(lines[42].split('[')[0].strip())
+        meta['NEX0s_base'] = np.int(lines[43].split('[')[0].strip())
+
+        # Synthesis Results - Best model
+        meta['chi2_Nl_eff'] = np.float(lines[49].split('[')[0].strip())
+        meta['adev'] = np.float(lines[50].split('[')[0].strip())
+        meta['sum_of_x'] = np.float(lines[52].split('[')[0].strip())
+        meta['Flux_tot'] = np.float(lines[53].split('[')[0].strip())
+        meta['Mini_tot'] = np.float(lines[54].split('[')[0].strip())
+        meta['Mcor_tot'] = np.float(lines[55].split('[')[0].strip())
+        meta['v0_min'] = np.float(lines[57].split('[')[0].strip())
+        meta['vd_min'] = np.float(lines[58].split('[')[0].strip())
+        meta['AV_min'] = np.float(lines[59].split('[')[0].strip())
+        meta['YAV_min'] = np.float(lines[60].split('[')[0].strip())
+    except Exception:
+        return meta, state
+    state = True
+    return meta, state
+
+
+def _test_read_starlight_output_header():
+    f = open('/pool/projects/starlight/STARLIGHTv04/0414.51901.393.cxt.sc4.C99.im.CCM.BN_11')
+    lines = f.readlines()
+    f.close()
+    meta, state = read_starlight_output_header(lines)
+    print(state)
+    print(meta)
+
+
+def _test_starlight_output():
     pass
 
 
@@ -675,4 +823,5 @@ if __name__ =='__main__':
     # _test_starlight_grid()
     # _test_starlight_base()
     # _test_starlight_config()
-    _test_starlight_mask()
+    # _test_starlight_mask()
+    _test_read_starlight_output_header()
