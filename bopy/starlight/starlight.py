@@ -177,13 +177,13 @@ class StarlightGrid(object):
         for key in self.arq_order:
             val = self.__getattribute__(key)
             if np.isscalar(val):
-                self.__setattr__(key, [val for i in xrange(n_obs)])
+                self.__setattr__(key, [val for _ in range(n_obs)])
             else:
                 assert len(val) == n_obs
 
         #  2. to string
         str_list = []
-        for i in xrange(n_obs):
+        for i in range(n_obs):
             arq_data_i = ["%s" % self.__getattribute__(key)[i]
                           for key in self.arq_order]
             str_list.append(sep.join(arq_data_i) + "\n")
@@ -193,7 +193,7 @@ class StarlightGrid(object):
         f = open(filepath, "w+")
         f.writelines(self._meta_to_string(meta_val_width))
         f.write('\n')
-        f.writelines(self._arq_to_string('   '))
+        f.writelines(self._arq_to_string(sep=sep))
         f.write('\n')
         f.write(self.extra)
         f.close()
@@ -273,13 +273,13 @@ class StarlightBase(object):
         for key in self.arq_order:
             val = self.__getattribute__(key)
             if np.isscalar(val):
-                self.__setattr__(key, [val for i in xrange(n_obs)])
+                self.__setattr__(key, [val for _ in range(n_obs)])
             else:
                 assert len(val) == n_obs
 
         # 2. to string
         str_list = []
-        for i in xrange(n_obs):
+        for i in range(n_obs):
             arq_data_i = ["%s" % self.__getattribute__(key)[i]
                           for key in self.arq_order]
             str_list.append(sep.join(arq_data_i) + "\n")
@@ -459,8 +459,8 @@ _config_StCv04C11_ = dict(
     R_Burn_in=1.2,
     IsGRTestHard_BurnIn=0,
     # EX0s technical parameters
-    EXOs_PopVector_option='MIN', # MIN/AVE
-    EXOs_method_option='CUMUL', # CUMUL/SMALL
+    EXOs_PopVector_option='MIN',  # MIN/AVE
+    EXOs_method_option='CUMUL',  # CUMUL/SMALL
     EXOs_Threshold=0.02,
     Temp_ini_EX0s=1.0,
     Temp_fin_EX0s=1.0e-3,
@@ -652,9 +652,9 @@ class StarlightConfig(object):
 def _test_starlight_config():
     sc = StarlightConfig()
     sc.set_quick('StCv04.C99.config')
-    sc.meta
+    print(sc.meta)
     sc.set_quick('StCv04.C11.config')
-    sc.meta
+    print(sc.meta)
     sc.set_meta(Is1stLineHeader=1)
     sc.write('/pool/projects/starlight/STARLIGHTv04/StCv04.C99.config_')
 
@@ -662,18 +662,213 @@ def _test_starlight_config():
 # ################
 # Starlight Mask #
 # ################
+sm_tplt_sdss_gm = Table(np.array([
+    [3710.000000, 3744.000000, 0.000000,
+     '[OII]          3726+3729 emission line', 0],
+    [3858.000000, 3880.000000, 0.000000,
+     '[NeIII]        3869 emission line', 0],
+    [3960.000000, 3980.000000, 0.000000,
+     'Hepsilon       3970 emission line (over CaII H)', 0],
+    [4092.000000, 4112.000000, 0.000000,
+     'Hdelta         4102 emission line', 0],
+    [4330.000000, 4350.000000, 0.000000,
+     'Hgamma         4340 emission line', 0],
+    [4848.000000, 4874.000000, 0.000000,
+     'Hbeta          4861 emission line', 0],
+    [4940.000000, 5028.000000, 0.000000,
+     '[OIII]         4959 & 5007 emission lines', 0],
+    [5866.000000, 5916.000000, 0.000000,
+     'HeI & NaD      5876 emission line & ~ 5890 ISM absorption', 0],
+    [6280.000000, 6320.000000, 0.000000,
+     '[OI]           6300 emission line', 0],
+    [6528.000000, 6608.000000, 0.000000,
+     'Halpha & [NII] 6563, 6548 & 6583 emission lines', 0],
+    [6696.000000, 6752.000000, 0.000000,
+     '[SII]          6717 & 6731 emission lines', 0]]),
+    names=['wave1', 'wave2', 'mask_value', 'comment', 'sky'],
+    dtype=['f8', 'f8', 'f8', 'S70', '?'])
+sm_tplt_bc03_long = Table(np.array([
+    [3718.000000, 3735.000000, 0.000000, '*[OII]     3726.0', 0],
+    [3720.000000, 3737.000000, 0.000000, '*[OII]     3728.8', 0],
+    [3796.000000, 3802.000000, 0.000000, 'H10        3797.9', 0],
+    [3833.000000, 3841.000000, 0.000000, 'H90        3835.4', 0],
+    [3862.000000, 3871.000000, 0.000000, '*[NeIII]   3869.1', 0],
+    [3882.000000, 3891.000000, 0.000000, 'H8HeI      3889.0', 0],
+    [3961.000000, 3973.000000, 0.000000, '[NeIII]    3967.8', 0],
+    [3961.000000, 3974.000000, 0.000000, 'Hepsilon   3970.1', 0],
+    [4024.000000, 4030.000000, 0.000000, 'HeI        4026.2', 0],
+    [4067.000000, 4070.000000, 0.000000, '[SII]      4068.6', 0],
+    [4095.000000, 4107.000000, 0.000000, '*Hdelta    4101.7', 0],
+    [4332.000000, 4346.000000, 0.000000, '*Hgamma    4340.5', 0],
+    [4469.000000, 4475.000000, 0.000000, 'HeI        4471.5', 0],
+    [4854.000000, 4868.000000, 0.000000, '*Hbeta     4861.3', 0],
+    [4947.000000, 4968.000000, 0.000000, '*[OIII]    4958.9', 0],
+    [4998.000000, 5019.000000, 0.000000, '*[OIII]    5006.8', 0],
+    [5009.000000, 5022.000000, 0.000000, 'HeI        5015.7', 0],
+    [5156.000000, 5164.000000, 0.000000, '[FeVII]    5158.4', 0],
+    [5193.000000, 5202.000000, 0.000000, '[NI]       5199.1', 0],
+    [5267.000000, 5274.000000, 0.000000, '[FeIII]    5270.4', 0],
+    [5868.000000, 5883.000000, 0.000000, 'HeI        5875.6', 0],
+    [6296.000000, 6303.000000, 0.000000, '*[OI]      6300.3', 0],
+    [6303.000000, 6315.000000, 0.000000, '[SIII]     6312.1', 0],
+    [6355.000000, 6372.000000, 0.000000, '[OI]       6363.8', 0],
+    [6538.000000, 6591.000000, 0.000000, '*[NII]     6548.0', 0],
+    [6547.000000, 6576.000000, 0.000000, '*Halpha    6562.8', 0],
+    [6575.000000, 6591.000000, 0.000000, '*[NII]     6583.5', 0],
+    [6667.000000, 6681.000000, 0.000000, 'HeI        6678.2', 0],
+    [6710.000000, 6743.000000, 0.000000, '*[SII]     6716.4', 0],
+    [6718.000000, 6743.000000, 0.000000, '*[SII]     6730.8', 0],
+    [7061.000000, 7072.000000, 0.000000, 'HeI        7065.2', 0],
+    [7125.000000, 7142.000000, 0.000000, '[ArIII]    7135.8', 0],
+    [7315.000000, 7329.000000, 0.000000, '[OII]      7319.5', 0],
+    [7320.000000, 7335.000000, 0.000000, '[OII]      7330.2', 0],
+    [3718.000000, 3735.000000, 0.000000, '*[OII]     3726.0', 0],
+    [3720.000000, 3737.000000, 0.000000, '*[OII]     3728.8', 0],
+    [3796.000000, 3802.000000, 0.000000, 'H10        3797.9', 0],
+    [3833.000000, 3841.000000, 0.000000, 'H90        3835.4', 0],
+    [3862.000000, 3871.000000, 0.000000, '*[NeIII]   3869.1', 0],
+    [3882.000000, 3891.000000, 0.000000, 'H8HeI      3889.0', 0],
+    [3961.000000, 3973.000000, 0.000000, '[NeIII]    3967.8', 0],
+    [3961.000000, 3974.000000, 0.000000, 'Hepsilon   3970.1', 0],
+    [4024.000000, 4030.000000, 0.000000, 'HeI        4026.2', 0],
+    [4067.000000, 4070.000000, 0.000000, '[SII]      4068.6', 0],
+    [4095.000000, 4107.000000, 0.000000, '*Hdelta    4101.7', 0],
+    [4332.000000, 4346.000000, 0.000000, '*Hgamma    4340.5', 0],
+    [4469.000000, 4475.000000, 0.000000, 'HeI        4471.5', 0],
+    [4854.000000, 4868.000000, 0.000000, '*Hbeta     4861.3', 0],
+    [4947.000000, 4968.000000, 0.000000, '*[OIII]    4958.9', 0],
+    [4998.000000, 5019.000000, 0.000000, '*[OIII]    5006.8', 0],
+    [5009.000000, 5022.000000, 0.000000, 'HeI        5015.7', 0],
+    [5156.000000, 5164.000000, 0.000000, '[FeVII]    5158.4', 0],
+    [5193.000000, 5202.000000, 0.000000, '[NI]       5199.1', 0],
+    [5267.000000, 5274.000000, 0.000000, '[FeIII]    5270.4', 0],
+    [5868.000000, 5883.000000, 0.000000, 'HeI        5875.6', 0],
+    [6296.000000, 6303.000000, 0.000000, '*[OI]      6300.3', 0],
+    [6303.000000, 6315.000000, 0.000000, '[SIII]     6312.1', 0],
+    [6355.000000, 6372.000000, 0.000000, '[OI]       6363.8', 0],
+    [6538.000000, 6591.000000, 0.000000, '*[NII]     6548.0', 0],
+    [6547.000000, 6576.000000, 0.000000, '*Halpha    6562.8', 0],
+    [6575.000000, 6591.000000, 0.000000, '*[NII]     6583.5', 0],
+    [6667.000000, 6681.000000, 0.000000, 'HeI        6678.2', 0],
+    [6710.000000, 6743.000000, 0.000000, '*[SII]     6716.4', 0],
+    [6718.000000, 6743.000000, 0.000000, '*[SII]     6730.8', 0],
+    [7061.000000, 7072.000000, 0.000000, 'HeI        7065.2', 0],
+    [7125.000000, 7142.000000, 0.000000, '[ArIII]    7135.8', 0],
+    [7315.000000, 7329.000000, 0.000000, '[OII]      7319.5', 0],
+    [7320.000000, 7335.000000, 0.000000, '[OII]      7330.2', 0],
+    [6845.000000, 6945.000000, 0.000000,
+     'BC03-bug   shifted -5 Angs wrt to what they say.', 0],
+    [7165.000000, 7210.000000, 0.000000,
+     'BC03-bug?  looks like a bug, but not mentioned in BC03.', 0],
+    [7550.000000, 7725.000000, 0.000000,
+     'BC03-bug   equal to what they say in their paper.', 0],
+    [5880.000000, 5906.000000, 0.000000, 'NaD 5890 & 5896 (gm!)', 0],
+    [9059.000000, 9079.000000, 0.000000, '[SIII]     9069 (gm!)', 0]]),
+    names=['wave1', 'wave2', 'mask_value', 'comment', 'sky'],
+    dtype=['f8', 'f8', 'f8', 'S70', '?'])
+sm_tplt_bc03_short = Table(np.array([
+    [3721.000000, 3728.000000, 0.000000, '*[OII]     3726.0', 0],
+    [3721.000000, 3730.000000, 0.000000, '*[OII]     3728.8', 0],
+    [3746.000000, 3749.000000, 0.000000, 'H12        3750.2', 0],
+    [3768.000000, 3773.000000, 0.000000, 'H11        3770.6', 0],
+    [3887.000000, 3892.000000, 0.000000, 'H8HeI      3889.0', 0],
+    [4023.000000, 4025.000000, 0.000000, 'HeI        4026.2', 0],
+    [4065.000000, 4076.000000, 0.000000, '[SII]      4068.6', 0],
+    [4654.000000, 4658.000000, 0.000000, '[FeIII]    4658.0', 0],
+    [4915.000000, 4921.000000, 0.000000, 'HeI        4921.9', 0],
+    [4951.000000, 4962.000000, 0.000000, '*[OIII]    4958.9', 0],
+    [4999.000000, 5010.000000, 0.000000, '*[OIII]    5006.8', 0],
+    [5262.000000, 5274.000000, 0.000000, '[FeIII]    5270.4', 0],
+    [6082.000000, 6085.000000, 0.000000, '[FeVII]    6086.3', 0],
+    [6305.000000, 6320.000000, 0.000000, '[SIII]     6312.1', 0],
+    [6539.000000, 6561.000000, 0.000000, '*[NII]     6548.0', 0],
+    [6574.000000, 6596.000000, 0.000000, '*[NII]     6583.5', 0],
+    [6673.000000, 6677.000000, 0.000000, 'HeI        6678.2', 0],
+    [6721.000000, 6744.000000, 0.000000, '*[SII]     6730.8', 0],
+    [6845.000000, 6945.000000, 0.000000,
+     'BC03-bug   shifted -5 Angs wrt to what they say.', 0],
+    [7165.000000, 7210.000000, 0.000000,
+     'BC03-bug?  looks like a bug, but not mentioned in BC03.', 0],
+    [7550.000000, 7725.000000, 0.000000,
+     'BC03-bug   equal to what they say in their paper.', 0],
+    [5880.000000, 5906.000000, 0.000000, 'NaD 5890 & 5896 (gm!)', 0],
+    [9059.000000, 9079.000000, 0.000000, '[SIII]     9069 (gm!)', 0]]),
+    names=['wave1', 'wave2', 'mask_value', 'comment', 'sky'],
+    dtype=['f8', 'f8', 'f8', 'S70', '?'])
 
 
-class StarlightMask(object):
+class StarlightMask(Table):
     """ StarlightMask class is to represent the Mask file object for STARLIGHT
     """
-    line_ste = []
-    line_sky = []
 
+    def __init__(self):
+        super(self.__class__, self).__init__(
+            data=[[], [], [], [], []],
+            names=['wave1', 'wave2', 'mask_value', 'comment', 'sky'],
+            dtype=['f8', 'f8', 'f8', 'S70', '?'],
+            masked=True)
+
+    def quick_set(self, template='sdss_gm'):
+        """ a quick set to Starlight Mask template """
+        # options
+        map_dict = {'sdss_gm': sm_tplt_sdss_gm,
+                    'bc03_short': sm_tplt_bc03_short,
+                    'bc03_long': sm_tplt_bc03_long}
+        assert template in map_dict.keys()
+
+        # clean
+        self.clean()
+
+        # fill self with template
+        for _ in map_dict[template]:
+            self.add_row(_)
+
+    def clean(self):
+        """ clean all items in a StarlightMask instance """
+        while len(self) > 0:
+            self.remove_row(0)
+
+    def _to_string(self, sep='  ', z=None):
+        """ convert to string list """
+        if self['sky'].data.any():
+            # need redshift to calculate the wavelength
+            assert z is not None
+
+        str_list = []
+        for i in range(len(self)):
+            if self['sky'][i]:
+                str_list.append('%s%s%s%s%s%s%s%s%s\n'
+                                % (self['wave1'][i]/(1+z), sep,
+                                   self['wave2'][i]/(1+z), sep,
+                                   self['mask_value'][i], sep,
+                                   self['comment'][i], sep,
+                                   self['sky'][i]))
+            else:
+                str_list.append('%s%s%s%s%s%s%s%s%s\n'
+                                % (self['wave1'][i], sep,
+                                   self['wave2'][i], sep,
+                                   self['mask_value'][i], sep,
+                                   self['comment'][i], sep,
+                                   self['sky'][i]))
+        return str_list
+
+    def write_to(self, filepath, z=None, sep='  '):
+        """ write mask in STARLIGHT form """
+        f = open(filepath, 'w+')
+        f.write('%d\n' % len(self))
+        f.writelines(self._to_string(sep=sep, z=z))
+        f.write(__extra_comments__)
+        f.close()
 
 
 def _test_starlight_mask():
-    pass
+    sm = StarlightMask()
+    sm.quick_set('sdss_gm')
+    sm.quick_set('bc03_short')
+    sm.add_row([6280, 6288, 2, 'DIB6284', 0])
+    sm.add_row([5567, 5587, 0, 'skyline', 1])
+    sm.pprint()
+    sm.write_to('/pool/projects/starlight/STARLIGHTv04/Masks.EmLines.SDSS.gm_', z=0.01)
 
 
 # ##################
@@ -901,7 +1096,8 @@ def read_starlight_output_header(lines):
         meta['SN_in_SN_window'] = np.float(lines[30].split('[')[0].strip())
         meta['SN_in_norm_window'] = np.float(lines[31].split('[')[0].strip())
         meta['SN_err_in_SN_window'] = np.float(lines[32].split('[')[0].strip())
-        meta['SN_err_in_norm_window'] = np.float(lines[33].split('[')[0].strip())
+        meta['SN_err_in_norm_window'] =\
+            np.float(lines[33].split('[')[0].strip())
         meta['fscale_chi2'] = np.float(lines[34].split()[0].strip('['))
         # etc... [ignored ugly data form! --> this makes me happy!]
         meta['NOl_eff'] = np.int(lines[38].split('[')[0].strip())
@@ -954,4 +1150,5 @@ if __name__ =='__main__':
     # _test_starlight_config()
     # _test_starlight_mask()
     # _test_read_starlight_output_header()
-    _test_starlight_output()
+    # _test_starlight_output()
+    _test_starlight_mask()
