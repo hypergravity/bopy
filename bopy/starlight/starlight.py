@@ -30,6 +30,8 @@ Aims
 
 import os
 import numpy as np
+from astropy.table import Table, Column
+
 
 __extra_comments__ = '''
 # This grid file is written using bopy.starlight
@@ -730,16 +732,119 @@ class StarlightOutput(object):
         vd_min=0.,
         AV_min=0.,
         YAV_min=0.)
+    syn_spec = None
+    syn_model = None
 
     def __init__(self, filepath):
-        """ initialize instance """
+        """ initialize instance
+
+        Parameters
+        ----------
+        filepath: string
+            file path of the starlight output
+
+        Returns
+        -------
+        so: StarlightOutput instance
+            StarlightOutput instance
+
+        """
         # assert filepath existence
         try:
             assert os.path.exists(filepath)
         except AssertionError:
             raise(AssertionError('@Cham: file does not exist! %s' % filepath))
+
         # read header
+        f = open(filepath, 'r')
+        lines = f.readlines()
+        self.meta, state = read_starlight_output_header(lines)
+        f.close()
+        try:
+            assert state
+        except AssertionError:
+            raise(AssertionError('@Cham: starlight read header FAILED!'))
+
         # read blocks
+        # As pointed out by the STARLIGHT manual, 3 out of 5 blocks are ignored
+        # Only the synthetic results (coefficients [1/5] and spectra [5/5])
+        # are loaded into data
+
+        # 1. syn model
+        N_base = self.meta['N_base']
+        self.syn_model = read_starlight_output_syn_model(lines[63:63+N_base])
+
+        # 2. syn spectrum
+        syn_spec_start = 63+N_base+5+N_base+2+N_base+11
+        Nl_obs = np.int(lines[syn_spec_start-1].split('[')[0].strip())
+        # assert that the number of rest lines is equal to Nl_obs
+        assert len(lines) - syn_spec_start == Nl_obs
+        self.syn_spec = read_starlight_output_syn_spec(lines[syn_spec_start:])
+
+    def pprint(self):
+        len_max = np.max([len(key) for key in self.meta.keys()])
+        fmt_str = '%%%ds' % (len_max+1)
+        for k,v in self.meta.items():
+            print((fmt_str+': %s') % (k, v))
+        print('')
+        print(self.syn_model)
+        print('')
+        print(self.syn_spec)
+
+
+def read_starlight_output_syn_spec(lines):
+    """ read syn_spec of starlight output """
+    Nl_obs = len(lines)
+    wave = Column(np.zeros((Nl_obs, ), dtype=np.float), 'wave')
+    flux_obs = Column(np.zeros((Nl_obs, ), dtype=np.float), 'flux_obs')
+    flux_syn = Column(np.zeros((Nl_obs, ), dtype=np.float), 'flux_syn')
+    weight = Column(np.zeros((Nl_obs, ), dtype=np.float), 'weight')
+    for i, line in enumerate(lines):
+        line_split = line.split()
+        wave[i] = np.float(line_split[0])
+        flux_obs[i] = np.float(line_split[1])
+        flux_syn[i] = np.float(line_split[2])
+        weight[i] = np.float(line_split[3])
+    return Table([wave, flux_obs, flux_syn, weight])
+
+
+def read_starlight_output_syn_model(lines):
+    """ read syn_model of starlight output """
+    N_base=len(lines)
+    j = Column(np.zeros((N_base,), dtype=np.int), 'j')
+    x_j = Column(np.zeros((N_base,), dtype=np.float), 'x_j')
+    Mini_j = Column(np.zeros((N_base,), dtype=np.float), 'Mini_j')
+    Mcor_j = Column(np.zeros((N_base,), dtype=np.float), 'Mcor_j')
+    age_j = Column(np.zeros((N_base,), dtype=np.float), 'age_j')
+    Z_j = Column(np.zeros((N_base,), dtype=np.float), 'Z')
+    LM_j = Column(np.zeros((N_base,), dtype=np.float), 'LM_j')
+    YAV = Column(np.zeros((N_base,), dtype=np.float), 'YAV')
+    Mstars = Column(np.zeros((N_base,), dtype=np.float), 'Mstars')
+    component_j = Column(np.zeros((N_base,), dtype=np.string_), 'component_j')
+    aFe = Column(np.zeros((N_base,), dtype=np.float), 'aFe')
+    SSP_chi2r = Column(np.zeros((N_base,), dtype=np.float), 'SSP_chi2r')
+    SSP_adev = Column(np.zeros((N_base,), dtype=np.float), 'SSP_adev')
+    SSP_AV = Column(np.zeros((N_base,), dtype=np.float), 'SSP_AV')
+    SSP_x = Column(np.zeros((N_base,), dtype=np.float), 'SSP_x')
+    for i in range(len(lines)):
+        line_split = lines[i].split()
+        j[i] = np.int(line_split[0])
+        x_j[i] = np.float(line_split[1])
+        Mini_j[i] = np.float(line_split[2])
+        Mcor_j[i] = np.float(line_split[3])
+        age_j[i] = np.float(line_split[4])
+        Z_j[i] = np.float(line_split[5])
+        LM_j[i] = np.float(line_split[6])
+        YAV[i] = np.float(line_split[7])
+        Mstars[i] = np.float(line_split[8])
+        component_j[i] = line_split[9]
+        aFe[i] = np.float(line_split[10])
+        SSP_chi2r[i] = np.float(line_split[11])
+        SSP_adev[i] = np.float(line_split[12])
+        SSP_AV[i] = np.float(line_split[13])
+        SSP_x[i] = np.float(line_split[14])
+    return Table([j, x_j, Mini_j, Mcor_j, age_j, Z_j, LM_j, YAV, Mstars,
+                  component_j, aFe, SSP_chi2r, SSP_adev, SSP_AV, SSP_x])
 
 
 def read_starlight_output_header(lines):
@@ -788,7 +893,6 @@ def read_starlight_output_header(lines):
         meta['Nglobal_steps'] = np.int(lines[41].split('[')[0].strip())
         meta['N_chains'] = np.int(lines[42].split('[')[0].strip())
         meta['NEX0s_base'] = np.int(lines[43].split('[')[0].strip())
-
         # Synthesis Results - Best model
         meta['chi2_Nl_eff'] = np.float(lines[49].split('[')[0].strip())
         meta['adev'] = np.float(lines[50].split('[')[0].strip())
@@ -816,7 +920,10 @@ def _test_read_starlight_output_header():
 
 
 def _test_starlight_output():
-    pass
+    filepath = ('/pool/projects/starlight/STARLIGHTv04/'
+                '0414.51901.393.cxt.sc4.C99.im.CCM.BN_11')
+    so = StarlightOutput(filepath)
+    so.pprint()
 
 
 if __name__ =='__main__':
@@ -824,4 +931,5 @@ if __name__ =='__main__':
     # _test_starlight_base()
     # _test_starlight_config()
     # _test_starlight_mask()
-    _test_read_starlight_output_header()
+    # _test_read_starlight_output_header()
+    _test_starlight_output()
