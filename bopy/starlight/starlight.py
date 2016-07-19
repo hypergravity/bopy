@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 
 """
 
@@ -27,11 +26,12 @@ Aims
 
 """
 
+from __future__ import print_function
 
 import os
 import numpy as np
 from astropy.table import Table, Column
-
+from astropy.io import fits
 
 __extra_comments__ = '''
 # This grid file is written using bopy.starlight
@@ -676,6 +676,11 @@ def _test_starlight_mask():
     pass
 
 
+# ##################
+# Starlight Output #
+# ##################
+
+
 class StarlightOutput(object):
     """ StarlightOutput class is to read/re-construct the STARLIGHT results
     """
@@ -790,6 +795,20 @@ class StarlightOutput(object):
         print(self.syn_model)
         print('')
         print(self.syn_spec)
+
+    def write_fits(self, filepath, **kwargs):
+        prihdr = fits.Header()
+        prihdr['AUTHOR'] = 'Bo Zhang'
+        for k, v in self.meta.items():
+            prihdr[k] = v
+        prihdu = fits.PrimaryHDU(header=prihdr)
+        hdulist = fits.HDUList([prihdu,
+                                fits.table_to_hdu(self.syn_model),
+                                fits.table_to_hdu(self.syn_spec)])
+        if os.path.exists(filepath):
+            print('[StarlightOuput.write_fits()]: filepath exists: %s'
+                  % filepath)
+        hdulist.writeto(filepath, **kwargs)
 
 
 def read_starlight_output_syn_spec(lines):
@@ -924,6 +943,9 @@ def _test_starlight_output():
                 '0414.51901.393.cxt.sc4.C99.im.CCM.BN_11')
     so = StarlightOutput(filepath)
     so.pprint()
+    so.write_fits('/pool/projects/starlight/STARLIGHTv04/'
+                  '0414.51901.393.cxt.sc4.C99.im.CCM.BN_11.fits',
+                  clobber=True)
 
 
 if __name__ =='__main__':
