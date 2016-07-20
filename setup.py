@@ -29,8 +29,7 @@ if __name__ == '__main__':
                   'bopy/obstools',
                   'bopy/obstools/Xinglong216HRS',
                   'bopy/helpers',
-                  'bopy/helpers/ezpadova',
-                  'bopy.starlight'
+                  'bopy/helpers/ezpadova'
                   ],
         package_data={'bopy/data': [''],
                       "":          ["LICENSE"]},
