@@ -4,7 +4,7 @@ from distutils.core import setup
 if __name__ == '__main__':
     setup(
         name='bopy',
-        version='0.2.2',
+        version='0.2.4',
         author='Bo Zhang',
         author_email='bozhang@nao.cas.cn',
         # py_modules=['bopy','spec','core'],
@@ -17,7 +17,6 @@ if __name__ == '__main__':
             "Intended Audience :: Science/Research",
             "License :: OSI Approved :: BSD License",
             "Operating System :: OS Independent",
-            "Programming Language :: C",
             "Programming Language :: Python :: 2.7",
             "Topic :: Scientific/Engineering :: Astronomy",
             "Topic :: Scientific/Engineering :: Physics"],
@@ -34,6 +33,5 @@ if __name__ == '__main__':
         package_data={'bopy/data': [''],
                       "":          ["LICENSE"]},
         include_package_data=True,
-        requires=['numpy', 'scipy', 'matplotlib', 'astropy', 'lmfit'],
-        # setup_requires=['github-distutils >= 0.1.0']
+        requires=['numpy', 'scipy', 'matplotlib', 'astropy', 'lmfit']
     )
