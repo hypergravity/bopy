@@ -27,7 +27,9 @@ Aims
 
 """
 
+from __future__ import division
 import os
+import collections
 import numpy as np
 import matplotlib.pyplot as plt
 from lmfit.models import LinearModel, GaussianModel
@@ -180,25 +182,25 @@ def measure_line_index(wave,
         mod_gauss = GaussianModel(prefix='mod_gauss_')
         par_gauss = mod_gauss.guess(resi_range, x=wave_range)
         out_gauss = mod_gauss.fit(resi_range, par_gauss, x=wave_range)
-        line_indx = {
-            'SN_local_flux_err':        np.median(flux_shoulder / flux_err_shoulder),
-            'SN_local_flux_std':        1. / noise_std,
-            'num_bad_pixel':            np.sum(mask_range != 0),
-            'EW_int':                   EW_int,
-            'EW_int_err':               EW_int_err,
-            'mod_linear_slope':         out_linear.params[mod_linear.prefix + 'slope'].value,
-            'mod_linear_slope_err':     out_linear.params[mod_linear.prefix + 'slope'].stderr,
-            'mod_linear_intercept':     out_linear.params[mod_linear.prefix + 'intercept'].value,
-            'mod_linear_intercept_err': out_linear.params[mod_linear.prefix + 'intercept'].stderr,
-            'mod_gauss_amplitude':      out_gauss.params[mod_gauss.prefix + 'amplitude'].value,
-            'mod_gauss_amplitude_err':  out_gauss.params[mod_gauss.prefix + 'amplitude'].stderr,
-            'mod_gauss_center':         out_gauss.params[mod_gauss.prefix + 'center'].value,
-            'mod_gauss_center_err':     out_gauss.params[mod_gauss.prefix + 'center'].stderr,
-            'mod_gauss_sigma':          out_gauss.params[mod_gauss.prefix + 'sigma'].value,
-            'mod_gauss_sigma_err':      out_gauss.params[mod_gauss.prefix + 'sigma'].stderr,
-            'mod_gauss_amplitude_std':  np.nan,
-            'mod_gauss_center_std':     np.nan,
-            'mod_gauss_sigma_std':      np.nan}
+        line_indx = collections.OrderedDict([
+            ('SN_local_flux_err',        np.median(flux_shoulder / flux_err_shoulder)),
+            ('SN_local_flux_std',        1. / noise_std),
+            ('num_bad_pixel',            np.sum(mask_range != 0)),
+            ('EW_int',                   EW_int),
+            ('EW_int_err',               EW_int_err),
+            ('mod_linear_slope',         out_linear.params[mod_linear.prefix + 'slope'].value),
+            ('mod_linear_slope_err',     out_linear.params[mod_linear.prefix + 'slope'].stderr),
+            ('mod_linear_intercept',     out_linear.params[mod_linear.prefix + 'intercept'].value),
+            ('mod_linear_intercept_err', out_linear.params[mod_linear.prefix + 'intercept'].stderr),
+            ('mod_gauss_amplitude',      out_gauss.params[mod_gauss.prefix + 'amplitude'].value),
+            ('mod_gauss_amplitude_err',  out_gauss.params[mod_gauss.prefix + 'amplitude'].stderr),
+            ('mod_gauss_center',         out_gauss.params[mod_gauss.prefix + 'center'].value),
+            ('mod_gauss_center_err',     out_gauss.params[mod_gauss.prefix + 'center'].stderr),
+            ('mod_gauss_sigma',          out_gauss.params[mod_gauss.prefix + 'sigma'].value),
+            ('mod_gauss_sigma_err',      out_gauss.params[mod_gauss.prefix + 'sigma'].stderr),
+            ('mod_gauss_amplitude_std',  np.nan),
+            ('mod_gauss_center_std',     np.nan),
+            ('mod_gauss_sigma_std',      np.nan)])
 
         # estimate EW_fit_err
         num_refit_ = num_refit[1]
@@ -245,29 +247,28 @@ def measure_line_index(wave,
 
 def measure_line_index_null_result(return_type):
     """generate default value (nan/False) when measurement fails
-
     Returns
     -------
     default value (nan/False)
     """
-    line_indx = {'SN_local_flux_err':        np.nan,
-                 'SN_local_flux_std':        np.nan,
-                 'num_bad_pixel':            np.nan,
-                 'EW_int':                   np.nan,
-                 'EW_int_err':               np.nan,
-                 'mod_linear_slope':         np.nan,
-                 'mod_linear_slope_err':     np.nan,
-                 'mod_linear_intercept':     np.nan,
-                 'mod_linear_intercept_err': np.nan,
-                 'mod_gauss_amplitude':      np.nan,
-                 'mod_gauss_amplitude_err':  np.nan,
-                 'mod_gauss_center':         np.nan,
-                 'mod_gauss_center_err':     np.nan,
-                 'mod_gauss_sigma':          np.nan,
-                 'mod_gauss_sigma_err':      np.nan,
-                 'mod_gauss_amplitude_std':  np.nan,
-                 'mod_gauss_center_std':     np.nan,
-                 'mod_gauss_sigma_std':      np.nan}
+    line_indx = ([('SN_local_flux_err',        np.nan),
+                  ('SN_local_flux_std',        np.nan),
+                  ('num_bad_pixel',            np.nan),
+                  ('EW_int',                   np.nan),
+                  ('EW_int_err',               np.nan),
+                  ('mod_linear_slope',         np.nan),
+                  ('mod_linear_slope_err',     np.nan),
+                  ('mod_linear_intercept',     np.nan),
+                  ('mod_linear_intercept_err', np.nan),
+                  ('mod_gauss_amplitude',      np.nan),
+                  ('mod_gauss_amplitude_err',  np.nan),
+                  ('mod_gauss_center',         np.nan),
+                  ('mod_gauss_center_err',     np.nan),
+                  ('mod_gauss_sigma',          np.nan),
+                  ('mod_gauss_sigma_err',      np.nan),
+                  ('mod_gauss_amplitude_std',  np.nan),
+                  ('mod_gauss_center_std',     np.nan),
+                  ('mod_gauss_sigma_std',      np.nan)])
     if return_type == 'array':
         return np.array(line_indx.values())
     return line_indx
@@ -481,6 +482,8 @@ def walk_dir(dirpath):
     for parent, dirnames, filenames in os.walk(dirpath):
         filename_list.extend([os.path.join(parent, filename)
                               for filename in filenames])
+    n = len(filename_list)
+    filename_list = filename_list[1:n+1]
     return filename_list
     
 
