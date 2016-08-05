@@ -13,3 +13,6 @@
 .ipynb_checkpoint
 *.ipynb
 bopy/data
+MANIFEST
+dist/*
+build/*
