@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
+from scipy.interpolate._monotone import PchipInterpolator
+
 """
 
 Author
@@ -50,7 +54,7 @@ import datetime
 import astropy.constants as const
 import astropy.units as u
 from inspect import isfunction
-from scipy.interpolate import pchip_interpolate
+from scipy.interpolate import PchipInterpolator
 from .spec import spec_quick_init
 
 # deprecated constants ########################################################
@@ -433,8 +437,8 @@ def conv_spec(wave,
     """
     if verbose:
         start = datetime.datetime.now()
-        print '---------------------------------------------------------------'
-        print '@Cham: Welcome to the spectral convolution code developed by Bo Zhang (@NAOC) ...'
+        print('--------------------------------------------------------------')
+        print('@Cham: Welcome to the spectral convolution code developed by Bo Zhang (@NAOC) ...')
 
     # 1. re-format R_hi & R_lo
     assert R_hi is not None and R_lo is not None
@@ -460,16 +464,18 @@ def conv_spec(wave,
 
     # 4. find wave_interp & flux_interp
     if verbose:
-        print '@Cham: interpolating orignal spectrum to wave_interp ...'
+        print('@Cham: interpolating orignal spectrum to wave_interp ...')
     wave_max = np.max(wave)
     wave_min = np.min(wave)
     wave_interp = generate_wave_array_R(wave_min, wave_max,
                                         Rgk, over_sample=over_sample)
-    flux_interp = pchip_interpolate(wave, flux, wave_interp)
+    P = PchipInterpolator(wave, flux, extrapolate=None)
+    flux_interp = P(wave_interp)
+    assert not np.any(np.isnan(flux_interp))
 
     # 5. generate Gaussian Kernel array
     if verbose:
-        print '@Cham: generating gaussian kernel array ...'
+        print('@Cham: generating gaussian kernel array ...')
     gk_array = generate_gaussian_kernel_array(over_sample,
                                               gaussian_kernel_sigma_num)
     gk_len = len(gk_array)
@@ -477,9 +483,9 @@ def conv_spec(wave,
 
     # 6. convolution
     if verbose:
-        print '@Cham: convolution ...'
-        print '@Cham: estimated convolution time: %.2f seconds ...'\
-              % (len(flux_interp)*gk_len/55408./657.*0.05)
+        print('@Cham: convolution ...')
+        print('@Cham: estimated convolution time: %.2f seconds ...'
+              % (len(flux_interp) * gk_len / 55408. / 657. * 0.05))
     convolved_flux = np.convolve(flux_interp, gk_array)[gk_len_half:-gk_len_half]
 
     # 7. find new wave array
@@ -487,29 +493,30 @@ def conv_spec(wave,
         # wave_new is None
         # default: 5 times over-sample
         if verbose:
-            print '@Cham: using default 5 times over-sample wave array ...'
+            print('@Cham: using default 5 times over-sample wave array ...')
         wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1],
                                          R_lo, wave_new_oversample)
     elif np.isscalar(wave_new):
         # wave_new specifies the new wave array over_sampling_lo rate
         # default is 5. times over-sample
         if verbose:
-            print '@Cham: using user-specified %.2f times over-sample wave array ...' % wave_new
+            print('@Cham: using user-specified %.2f times over-sample wave array ...' % wave_new)
         wave_new = generate_wave_array_R(wave_interp[0], wave_interp[-1],
                                          R_lo, wave_new)
     else:
         # wave_new specified
         if verbose:
-            print '@Cham: using user-specified wave array ...'
+            print('@Cham: using user-specified wave array ...')
 
     # 8. interpolate convolved flux to new wave array
     if verbose:
-        print '@Cham: interpolating convolved spectrum to new wave array ...'
-    flux_new = pchip_interpolate(wave_interp, convolved_flux, wave_new)
+        print('@Cham: interpolating convolved spectrum to new wave array ...')
+    P = PchipInterpolator(wave_interp, convolved_flux, extrapolate=False)
+    flux_new = P(wave_new)
     if verbose:
         stop = datetime.datetime.now()
-        print '@Cham: total time spent: %.2f seconds' % (stop-start).total_seconds()
-        print '---------------------------------------------------------------'
+        print('@Cham: total time spent: %.2f seconds' % (stop-start).total_seconds())
+        print('---------------------------------------------------------------')
 
     if return_type == 'array':
         return wave_new, flux_new
@@ -526,7 +533,7 @@ def test_bc03_degrade_to_R500():
     fp = '/home/cham/PycharmProjects/bopy/bopy/data/model_bc03/bc2003_hr_m42_chab_ssp_020.spec'
     data = np.loadtxt(fp)
     spec = Spec(data, names=['wave', 'flux'])
-    print spec
+    print(spec)
     spec = spec.extract_chunk_wave_interval([[4000., 8000.]])[0]
 
     # 2.convolve spectum
@@ -539,14 +546,14 @@ def test_bc03_degrade_to_R500():
                       verbose=False)
     spec_.pprint()
 
-    print find_R_for_wave_array(spec_['wave'])
+    print(find_R_for_wave_array(spec_['wave']))
     # 3.plot results
     # fig = plt.figure()
     # plt.plot(wave, flux)
     # plt.plot(spec_['wave'], spec_['flux'], 'r')
     # fig.show()
     # fig.savefig(''')
-    print '@Cham: test OK ...'
+    print('@Cham: test OK ...')
 
 
 if __name__ == '__main__':
