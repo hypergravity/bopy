@@ -251,7 +251,8 @@ def measure_line_index_null_result(return_type):
     -------
     default value (nan/False)
     """
-    line_indx = ([('SN_local_flux_err',        np.nan),
+    line_indx = collections.OrderedDict([
+                  ('SN_local_flux_err',        np.nan),
                   ('SN_local_flux_std',        np.nan),
                   ('num_bad_pixel',            np.nan),
                   ('EW_int',                   np.nan),

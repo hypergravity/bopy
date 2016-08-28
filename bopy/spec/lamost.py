@@ -47,7 +47,7 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath='', extname='.fits'):
     spid: 2-digit integer
         spid, the number of the spectrogragh
 
-    fiberid: 4-digit integer
+    fiberid: 3-digit integer
         fiberid
 
     dirpath: string
