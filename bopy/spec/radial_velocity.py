@@ -29,7 +29,6 @@ Aims
 # 2. functions to calculate chi2 of
 
 
-
 def measure_rv(spec, spec_temp='sdss_galaxy'):
     pass
 

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 
 Author
@@ -129,9 +131,9 @@ def _test_spec_quick_init():
     flux = np.sin(wave/1000)*1000 + 30000. + np.random.rand(len(wave))
     spec_qi = spec_quick_init(wave, flux)
     spec_qi.pprint()
-    print '--------------------------------------'
-    print '@Cham: _test_spec_quick_init() OK ...'
-    print '--------------------------------------'
+    print('--------------------------------------')
+    print('@Cham: _test_spec_quick_init() OK ... ')
+    print('--------------------------------------')
 
 
 # ###################################### #

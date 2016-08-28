@@ -1,5 +1,6 @@
 *.iml
 *.xml
+*.html
 *.fits
 *.aux
 *.dvi
@@ -16,3 +17,4 @@ bopy/data
 MANIFEST
 dist/*
 build/*
+
