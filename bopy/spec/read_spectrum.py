@@ -29,8 +29,8 @@ import numpy as np
 from astropy.io import fits
 from astropy.table import Table, Column
 
-from .spec import Spec
 from .lamost import lamost_filepath
+from .spec import Spec
 
 
 def reconstruct_wcs_coord_from_fits_header(hdr, dim=1):

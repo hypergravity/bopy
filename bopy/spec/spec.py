@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 """
 
 Author
@@ -26,10 +24,11 @@ Aims
 
 """
 
+from __future__ import print_function
 
 import numpy as np
-from astropy.io import fits
 from astropy.table import Table, Column
+
 from .continuum_normalization import (_cont_norm_running_quantile,
                                       _cont_norm_running_quantile_regions)
 

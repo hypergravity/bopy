@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
-from scipy.interpolate._monotone import PchipInterpolator
-
 """
 
 Author
@@ -49,13 +45,18 @@ Aims
 # i.e., the delta_lambda should be  1./1.12 times smaller.
 # ###########################################################################
 
-import numpy as np
+from __future__ import print_function
+
 import datetime
+
+import numpy as np
+from scipy.interpolate import PchipInterpolator
+
+from .spec import spec_quick_init
+
 import astropy.constants as const
 import astropy.units as u
 from inspect import isfunction
-from scipy.interpolate import PchipInterpolator
-from .spec import spec_quick_init
 
 # deprecated constants ########################################################
 # OVER_SAMPLING = 10.
@@ -526,8 +527,6 @@ def conv_spec(wave,
 
 def test_bc03_degrade_to_R500():
     # test a BC03 population spectrum
-    from astropy.table import Table
-    import matplotlib.pyplot as plt
     from bopy.spec.spec import Spec
     # 1. read spectrum
     fp = '/home/cham/PycharmProjects/bopy/bopy/data/model_bc03/bc2003_hr_m42_chab_ssp_020.spec'
