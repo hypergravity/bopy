@@ -34,7 +34,7 @@ from .spec import Spec
 
 
 def reconstruct_wcs_coord_from_fits_header(hdr, dim=1):
-    """ reconstruct wcs coordinates (e.g., wavelenght array) """
+    """ reconstruct wcs coordinates (e.g., wavelength array) """
     # assert dim is not larger than limit
     assert dim <= hdr['NAXIS']
 
@@ -43,12 +43,14 @@ def reconstruct_wcs_coord_from_fits_header(hdr, dim=1):
     cdelt = hdr['CDELT%d' % dim]
     try:
         crpix = hdr['CRPIX%d' % dim]
-    except(KeyError):
+    except KeyError:
         crpix = 1
-    naxis = hdr['NAXIS%d' % dim]
+
+    # length of the current dimension
+    naxis_ = hdr['NAXIS%d' % dim]
 
     # reconstruct wcs coordinates
-    coord = np.arange(1 - crpix, naxis + 1 - crpix) * cdelt + crval
+    coord = np.arange(1 - crpix, naxis_ + 1 - crpix) * cdelt + crval
     return coord
 
 
