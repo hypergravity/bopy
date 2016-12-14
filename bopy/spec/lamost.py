@@ -33,7 +33,7 @@ import numpy as np
 # from astropy.table import Table, Column
 
 
-def lamost_filepath(planid, mjd, spid, fiberid, dirpath='', extname='.fits'):
+def lamost_filepath(planid, mjd, spid, fiberid, dirpath="", extname=".fits"):
     """ generate file path of a LAMOST spectrum
 
     Parameters
@@ -61,17 +61,23 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath='', extname='.fits'):
 
     """
 
-    if dirpath == '' or dirpath is None:
+    # pre-processing: strip
+    if np.isscalar(planid):
+        planid = planid.strip()
+    else:
+        planid = [_.strip() for _ in planid]
+
+    if dirpath == "" or dirpath is None:
         # return file name
         if np.isscalar(mjd):
             # if only input one item
-            return 'spec-%05d-%s_sp%02d-%03d%s' \
+            return "spec-%05d-%s_sp%02d-%03d%s" \
                    % (mjd, planid, spid, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['spec-%05d-%s_sp%02d-%03d%s' %
+            return np.array(["spec-%05d-%s_sp%02d-%03d%s" %
                              (mjd[i], planid[i], spid[i], fiberid[i], extname)
-                             for i in xrange(len(mjd))])
+                             for i in range(len(mjd))])
     else:
         # return file path
         if not dirpath[-1] == os.path.sep:
@@ -79,27 +85,27 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath='', extname='.fits'):
 
         if np.isscalar(mjd):
             # if only input one item
-            return '%s%s%sspec-%05d-%s_sp%02d-%03d%s' \
+            return "%s%s%sspec-%05d-%s_sp%02d-%03d%s" \
                    % (dirpath, planid, os.path.sep,
                       mjd, planid, spid, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['%s%s%sspec-%05d-%s_sp%02d-%03d%s' %
+            return np.array(["%s%s%sspec-%05d-%s_sp%02d-%03d%s" %
                              (dirpath, planid[i], os.path.sep, mjd[i],
                               planid[i], spid[i], fiberid[i], extname)
-                             for i in xrange(len(mjd))])
+                             for i in range(len(mjd))])
 
 
 def _test_lamost_filepath():
     """test function **lamost_filepath**
     """
-    print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78))
-    print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/'))
-    print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/pool'))
-    print(lamost_filepath('GAC_061N46_V3', 55939, 7, 78, '/pool/'))
+    print(lamost_filepath("GAC_061N46_V3", 55939, 7, 78))
+    print(lamost_filepath("GAC_061N46_V3", 55939, 7, 78, "/"))
+    print(lamost_filepath("GAC_061N46_V3", 55939, 7, 78, "/pool"))
+    print(lamost_filepath("GAC_061N46_V3", 55939, 7, 78, "/pool/"))
 
 
-def sdss_filepath(plate, mjd, fiberid, dirpath='', extname='.fits'):
+def sdss_filepath(plate, mjd, fiberid, dirpath="", extname=".fits"):
     """ generate file path of a LAMOST spectrum
 
     Parameters
@@ -127,14 +133,14 @@ def sdss_filepath(plate, mjd, fiberid, dirpath='', extname='.fits'):
 
     """
 
-    if dirpath == '' or dirpath is None:
+    if dirpath == "" or dirpath is None:
         # return file name
         if np.isscalar(mjd):
             # if only input one item
-            return 'spec-%04d-%05d-%04d%s' % (plate, mjd, fiberid, extname)
+            return "spec-%04d-%05d-%04d%s" % (plate, mjd, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['spec-%04d-%05d-%04d%s' %
+            return np.array(["spec-%04d-%05d-%04d%s" %
                              (plate[i], mjd[i], fiberid[i], extname)
                              for i in xrange(len(mjd))])
     else:
@@ -144,26 +150,26 @@ def sdss_filepath(plate, mjd, fiberid, dirpath='', extname='.fits'):
 
         if np.isscalar(mjd):
             # if only input one item
-            return '%s%04d%sspec-%04d-%05d-%04d%s' \
+            return "%s%04d%sspec-%04d-%05d-%04d%s" \
                    % (dirpath, plate, os.path.sep,
                       plate, mjd, fiberid, extname)
         else:
             # if input a list of items
-            return np.array(['%s%04d%sspec-%04d-%05d-%04d%s' %
+            return np.array(["%s%04d%sspec-%04d-%05d-%04d%s" %
                              (dirpath, plate[i], os.path.sep, plate[i],
                               mjd[i], fiberid[i], extname)
                              for i in xrange(len(mjd))])
 
 
 def _test_sdss_filepath():
-    print(sdss_filepath(2238, 52059, 001, '/'))
+    print(sdss_filepath(2238, 52059, 001, "/"))
 
 
-if __name__ == '__main__':
-    print('')
-    print('@Cham: start to test the module ...')
-    print('')
-    print('@Cham: testing ''lamost_filepath'' ...')
+if __name__ == "__main__":
+    print("")
+    print("@Cham: start to test the module ...")
+    print("")
+    print("@Cham: testing ""lamost_filepath"" ...")
     _test_lamost_filepath()
     _test_sdss_filepath()
-    print('@Cham: OK')
+    print("@Cham: OK")
