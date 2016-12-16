@@ -366,20 +366,21 @@ def _test2():
     # transform into cube data
     cube_data_list, cube_name_list = interpolate_to_cube(
         vgrid_feh, vgrid_logt, grid_mini, isoc_list,
-        cube_quantities=["Z", "logageyr", "M_ini", "M_act", "logLLo", "logTe",
+        cube_quantities=["Z", "logageyr", "M_act", "logLLo", "logTe",
                          "logG", "mbol", "J", "H", "Ks", "int_IMF", "stage"])
 
     # cube HDUs
     hl = cubelist_to_hdulist(cube_data_list, cube_name_list)
     hl.info()
-    hl.writeto("/pool/model/padova/isocgrid/cube_isoc_2mass_full.fits")
+    hl.writeto("/pool/model/padova/isocgrid/cube_isoc_2mass_full.fits",
+               clobber=True)
 
     # combine isochrone tables
     comb_isoc = combine_isochrones(isoc_list)
     comb_isoc.write("/pool/model/padova/isocgrid/comb_isoc_2mass_full.fits")
 
     # write isochrone list into separate files
-    write_isoc_list(isoc_list, grid_list, "/pool/model/padova/isocgrid/2mass/")
+    write_isoc_list(isoc_list, grid_list, "/pool/model/padova/isocgrid/2mass/2mass")
     return hl
 
 
