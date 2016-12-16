@@ -4,7 +4,7 @@ from distutils.core import setup
 if __name__ == '__main__':
     setup(
         name='bopy',
-        version='0.2.4',
+        version='0.2.6',
         author='Bo Zhang',
         author_email='bozhang@nao.cas.cn',
         # py_modules=['bopy','spec','core'],
