@@ -53,7 +53,7 @@ def lamost_filepath(planid, mjd, spid, fiberid, dirpath="", extname=".fits"):
     dirpath: string
         the root directory for storing spectra.
 
-    Rreturns
+    Returns
     --------
     filepath: string
         the path of root dir of directory (prefix).
@@ -125,7 +125,7 @@ def sdss_filepath(plate, mjd, fiberid, dirpath="", extname=".fits"):
     extname: string
         in case that users want to synthesize other data format
 
-    Rreturns
+    Returns
     --------
     filepath: string
         the path of root dir of directory (prefix).
@@ -162,7 +162,7 @@ def sdss_filepath(plate, mjd, fiberid, dirpath="", extname=".fits"):
 
 
 def _test_sdss_filepath():
-    print(sdss_filepath(2238, 52059, 001, "/"))
+    print(sdss_filepath(2238, 52059, 1, "/"))
 
 
 if __name__ == "__main__":
