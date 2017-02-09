@@ -117,11 +117,21 @@ def measure_line_index(wave,
         line_shoulder_left = line_info['line_shoulder_left']
         line_shoulder_right = line_info['line_shoulder_right']
 
-        # 2. shift spectra to rest-frame
+        # 2. data preparation
+        # 2.1> shift spectra to rest-frame
         wave = np.array(wave)
         flux = np.array(flux)
         if z is not None:
             wave /= 1. + z
+        # 2.2> generate flux_err and mask if un-specified
+        if flux_err == None:
+            flux_err = np.ones(wave.shape)
+        if mask == None:
+            mask = np.zeros(wave.shape)
+        mask_ = np.zeros(wave.shape)
+        ind_mask = np.all([mask!=0],axis=0)
+        mask_[ind_mask] = 1
+        mask = mask_
 
         # 3. estimate the local continuum
         # 3.1> shoulder wavelength range
@@ -227,9 +237,11 @@ def measure_line_index(wave,
                     out_gauss_refit.params[mod_gauss.prefix + 'center'].value,\
                     out_gauss_refit.params[mod_gauss.prefix + 'sigma'].value
                 print(out_gauss_refit_amplitude[i], out_gauss_refit_center[i], out_gauss_refit_sigma[i])
-            line_indx.update({'mod_gauss_amplitude_std': np.nanstd(out_gauss_refit_amplitude),
-                              'mod_gauss_center_std':    np.nanstd(out_gauss_refit_center),
-                              'mod_gauss_sigma_std':     np.nanstd(out_gauss_refit_sigma)})
+            line_indx.update([
+                              ('mod_gauss_amplitude_std', np.nanstd(out_gauss_refit_amplitude)),
+                              ('mod_gauss_center_std',    np.nanstd(out_gauss_refit_center)),
+                              ('mod_gauss_sigma_std',     np.nanstd(out_gauss_refit_sigma))
+                              ])
 
         # 7. plot and save image
         if filepath is not None and os.path.exists(os.path.dirname(filepath)):
