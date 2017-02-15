@@ -355,13 +355,13 @@ def _test2():
     """ download full set of isochrones (2MASS) """
     from bopy.helpers.ezpadova.isochrone_grid import *
     # set grid
-    grid_logt = np.arange(6.0, 10.5, 0.05)
+    grid_logt = np.arange(6.0, 10.5, 0.01)
     grid_feh = np.arange(-4., +1., 0.05)
     grid_mini = np.arange(0.01, 12, 0.01)
 
     # get isochrones
     vgrid_feh, vgrid_logt, grid_list, isoc_list = get_isochrone_grid(
-        grid_feh, grid_logt, model="parsec12s", phot="2mass", n_jobs=20)
+        grid_feh, grid_logt, model="parsec12s", phot="2mass", n_jobs=100)
 
     # transform into cube data
     cube_data_list, cube_name_list = interpolate_to_cube(
