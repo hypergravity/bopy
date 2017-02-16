@@ -16,7 +16,7 @@ def isoc_interp(isoc,
                 doubling=1.0,
                 mode='linear',
                 interp_config=(('logG', 'linear'), ('J', 'linear')),
-                M_act='M_act'):
+                M_ini='M_ini'):
     """ isochrone interpolation that doesn't lose any structures
 
     Parameters
@@ -31,8 +31,8 @@ def isoc_interp(isoc,
         sampling scheme
     interp_config: tuple
         (colname, kind) pairs
-    M_act: string
-        default is 'M_act'
+    M_ini: string
+        the column name of the X in interpolation, default is 'M_ini'
 
     Returns
     -------
@@ -43,7 +43,7 @@ def isoc_interp(isoc,
     n_row = len(isoc)
 
     # kick invalid values
-    M = isoc[M_act].data
+    M = isoc[M_ini].data
     M_diff = np.diff(M)
 
     # determine M_interp
@@ -85,7 +85,7 @@ def isoc_interp(isoc,
     col_list = []
     for interp_col, kind in interp_config:
         assert interp_col in isoc.colnames
-        col_list.append(Column(interp1d(isoc[M_act], isoc[interp_col], kind=kind)(M_interp), interp_col))
+        col_list.append(Column(interp1d(isoc[M_ini], isoc[interp_col], kind=kind)(M_interp), interp_col))
 
     # return interpolated isochrone table
     return Table(col_list)
