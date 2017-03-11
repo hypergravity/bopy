@@ -142,7 +142,7 @@ def sdss_filepath(plate, mjd, fiberid, dirpath="", extname=".fits"):
             # if input a list of items
             return np.array(["spec-%04d-%05d-%04d%s" %
                              (plate[i], mjd[i], fiberid[i], extname)
-                             for i in xrange(len(mjd))])
+                             for i in range(len(mjd))])
     else:
         # return file path
         if not dirpath[-1] == os.path.sep:
@@ -158,7 +158,7 @@ def sdss_filepath(plate, mjd, fiberid, dirpath="", extname=".fits"):
             return np.array(["%s%04d%sspec-%04d-%05d-%04d%s" %
                              (dirpath, plate[i], os.path.sep, plate[i],
                               mjd[i], fiberid[i], extname)
-                             for i in xrange(len(mjd))])
+                             for i in range(len(mjd))])
 
 
 def _test_sdss_filepath():

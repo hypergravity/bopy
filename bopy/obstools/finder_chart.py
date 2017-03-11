@@ -100,7 +100,7 @@ def finder_chart_url_stscidss(
             urlform[7]
         ]
         urlstr = ''.join(urlpiece)
-        print c.dec.dms.m
+        print(c.dec.dms.m)
         return urlstr
     else:
         # a list of pairs of [ra, dec]
@@ -126,5 +126,5 @@ def finder_chart_url_stscidss(
 
 if __name__ == '__main__':
     # test finder_chart
-    print finder_chart_url_stscidss()
-    print '@Cham: test passed ...'
+    print(finder_chart_url_stscidss())
+    print('@Cham: test passed ...')

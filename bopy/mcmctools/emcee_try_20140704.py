@@ -71,7 +71,7 @@ def lnprob(p, x, y, z):
 import scipy.optimize as opt
 nll = lambda *args: -lnlike(*args)
 result = opt.minimize(nll, [alpha_true, beta_x_true, beta_y_true, eps_true],args=(x_true, y_true, z_obs))
-print result['x']
+print(result['x'])
 
 
 #%%

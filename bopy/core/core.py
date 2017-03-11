@@ -85,7 +85,7 @@ def bopy_test():
 
     Examples
     --------
-    >>> from bopy.core import bopy_test
+    >>> from bopy.core.core import bopy_test
     >>> bopy_test()
 
     """
@@ -93,9 +93,9 @@ def bopy_test():
 
 
 if __name__ == '__main__':
-    # print logical_or_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
-    # print logical_and_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
-    print "@Cham: test passed ..."
+    # print(logical_or_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
+    # print(logical_and_ext([np.ones(shape=(1,100)), np.zeros(shape=(2,50))])
+    print("@Cham: test passed ...")
     bopy_test()
 
 

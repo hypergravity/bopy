@@ -321,8 +321,13 @@ def write_isoc_list(isoc_list, grid_list,
 
 
 def _test():
-    """ download a random set of isochrones (sloan) """
-    from bopy.helpers.ezpadova.isochrone_grid import *
+    """ download a random set of isochrones (sloan)
+    Examples
+    --------
+    >>> from bopy.helpers.ezpadova.isochrone_grid import \
+    >>>     (get_isochrone_grid, interpolate_to_cube, cubelist_to_hdulist,
+    >>>      combine_isochrones, write_isoc_list)
+    """
     # set grid
     grid_logt = [6, 7., 9]
     grid_feh = [-2.2, -1., 0, 1., 10]
@@ -352,8 +357,14 @@ def _test():
 
 
 def _test2():
-    """ download full set of isochrones (2MASS) """
-    from bopy.helpers.ezpadova.isochrone_grid import *
+    """ download full set of isochrones (2MASS)
+    Examples
+    --------
+    >>> from bopy.helpers.ezpadova.isochrone_grid import \
+    >>>     (get_isochrone_grid, interpolate_to_cube, cubelist_to_hdulist,
+    >>>      combine_isochrones, write_isoc_list)
+    """
+
     # set grid
     grid_logt = np.arange(6.0, 10.5, 0.01)
     grid_feh = np.arange(-4., +1., 0.05)

@@ -124,5 +124,5 @@ def emcee_general_run(lnprob,
 
 
 if __name__ == "__main__":
-    print "@Cham: test function not implemented ..."
-    print "@Cham: but emcee_general_run was tested to be OK ..."
+    print("@Cham: test function not implemented ...")
+    print("@Cham: but emcee_general_run was tested to be OK ...")

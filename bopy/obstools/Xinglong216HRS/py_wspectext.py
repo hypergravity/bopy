@@ -48,7 +48,7 @@ def wspectext_allap(filepath, apaxis=0):
 
     """
     nrow, ncol = fits.open(filepath)[0].data.shape
-    print '@Cham: nrow = %d, ncol=%d' % (nrow, ncol)
+    print('@Cham: nrow = {:d}, ncol={:d}'.format(nrow, ncol))
     
     iraf.noao()
     iraf.noao.onedspec()
@@ -64,30 +64,30 @@ def wspectext_allap(filepath, apaxis=0):
 
     if os.path.exists(dirpath):
         # if dirpath exists
-        print '@Cham: directory exists ... (%s)' % dirpath
+        print('@Cham: directory exists ... (%s)' % dirpath)
     else:
         # if dirpath doesn't exist, mkdir
         os.mkdir(dirpath)
-        print '@Cham: mkdir %s'%dirpath
+        print('@Cham: mkdir %s'%dirpath)
     
     # execute wspectest
     if not apaxis == 1:
         for apnum in xrange(1, nrow+1):
             _input = '%s[1:%d, %d]' % (filename, ncol, apnum)
             _output = dirpath + os.sep + filename.replace('.fits', '_%04d.dat' % apnum)
-            print '@Cham: wspectext running ... [%s]' % _output
+            print('@Cham: wspectext running ... [%s]' % _output)
             iraf.onedspec.wspectext(input=_input, output=_output, header='no')
     else:
         for apnum in xrange(1, ncol+1):
             _input = '%s[%d, 1:%d]' % (filename, apnum, nrow)
             _output = dirpath + os.sep + filename.replace('.fits', '_%04d.dat' % apnum)
-            print '@Cham: wspectext running ... [%s]' % _output
+            print('@Cham: wspectext running ... [%s]' % _output)
             iraf.onedspec.wspectext(input=_input, output=_output, header='no')
 
     # print masseges
-    print '@Cham: ----------------------'
-    print '@Cham: mission complete!'
-    print '@Cham: ----------------------'
+    print('@Cham: ----------------------')
+    print('@Cham: mission complete!')
+    print('@Cham: ----------------------')
 
 
 if __name__ == '__main__':
@@ -102,15 +102,15 @@ if __name__ == '__main__':
     """
 
     if len(sys.argv) < 2:
-        print '@Cham: not enough arguments ...'
+        print('@Cham: not enough arguments ...')
     elif len(sys.argv) == 2:
         wspectext_allap(sys.argv[1])
     elif len(sys.argv) >= 3:
         if sys.argv[-1]=='0' or sys.argv[-1]=='1':
             # apaxis specified
-            for i in xrange(1, len(sys.argv)-1):
+            for i in range(1, len(sys.argv)-1):
                 wspectext_allap(sys.argv[i], sys.argv[-1])
         else:
             # apaxis not specified
-            for i in xrange(1, len(sys.argv)):
+            for i in range(1, len(sys.argv)):
                 wspectext_allap(sys.argv[i])

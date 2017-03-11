@@ -116,7 +116,7 @@ class EchelleSpec:
         self.wave_start = np.zeros(num_order)
         self.wave_end = np.zeros(num_order)
         self.wave_med = np.zeros(num_order)
-        for i in xrange(num_order):
+        for i in range(num_order):
             self.spec[i].sort('wave')
             self.wave_start[i], self.wave_end[i] = \
                 self.spec[i]['wave'].data[0], self.spec[i]['wave'].data[-1]
@@ -143,14 +143,14 @@ class EchelleSpec:
 def test1():
     dirpath = '/home/cham/PycharmProjects/bopy/bopy/data/test_echelle/w20160119027s'
     filelist = glob.glob(dirpath + '/*.dat')
-    print len(filelist)
-    print '------------'
+    print(len(filelist))
+    print('------------')
     for f in filelist:
-        print f
-    print '------------'
-    print filelist[0]
+        print(f)
+    print('------------')
+    print(filelist[0])
     sp = read_echelle_spec_ascii(filelist[0])
-    print sp
+    print(sp)
 
 
 def test2():
@@ -158,7 +158,7 @@ def test2():
     es = EchelleSpec(dirpath)
     sp = es.extract_order_wave_nearest(5780)
     sp.pprint()
-    print '----'
+    print('----')
     sps = es.extract_order_wave_allincluding(5780)
     for sp_ in sps:
         sp_.pprint()
