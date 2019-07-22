@@ -125,14 +125,14 @@ def _generate_wave_array_R_fixed(wave_start, wave_stop, R=2000.,
 
 
 def _generate_wave_array_R_func(wave_start, wave_stop, R=(lambda x: x),
-                               over_sample=1., wave_test_step=1.):
+                                over_sample=1., wave_test_step=1.):
     """ generate wave array given R as a function """
     # determine wave_step_min
     wave_test = np.arange(wave_start, wave_stop, wave_test_step)
     R_test = over_sample * R(wave_test)
     wave_step_min = np.min(wave_test / R_test)
     # wave guess
-    wave_guess = np.zeros((wave_stop-wave_start)/wave_step_min)
+    wave_guess = np.zeros(np.int(np.ceil((wave_stop-wave_start)/wave_step_min)))
     wave_guess[0] = wave_start
     # iterate for real # single side R !!!
     for i in np.arange(1, len(wave_guess)):
@@ -480,7 +480,7 @@ def conv_spec(wave,
     gk_array = generate_gaussian_kernel_array(over_sample,
                                               gaussian_kernel_sigma_num)
     gk_len = len(gk_array)
-    gk_len_half = (gk_len - 1) / 2.
+    gk_len_half = np.int((gk_len - 1) / 2.)
 
     # 6. convolution
     if verbose:
