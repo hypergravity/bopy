@@ -24,6 +24,7 @@ Aims
 """
 
 import os
+from collections import OrderedDict
 
 import numpy as np
 from astropy.io import fits
@@ -170,10 +171,46 @@ def _test_read_spectrum():
     sp.pprint()
 
 
+class MedSpec(OrderedDict):
+    """ for Median Resolution Spectrum """
+    meta = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __repr__(self):
+        s = "No.    Name     Dimensions\n"
+        for i, (k,v) in enumerate(self.items()):
+            s += "{}   {}   {}Rx{}C\n".format(i, k, len(v), len(v.colnames))
+        return s
+
+    @staticmethod
+    def read(fp):
+        return read_lamostms(fp)
+
+
+def read_lamostms(fp):
+    # read fits
+    hl = fits.open(fp)
+
+    # initialize MS
+    ms = MedSpec()
+
+    # set meta
+    ms.meta = OrderedDict(hl[0].header)
+
+    # set spec
+    for i, data in enumerate(hl[1:]):
+        ms[data.name] = Table(data=data.data, meta=OrderedDict(data.header))
+
+    return ms
+
+
 if __name__ == '__main__':
     print('')
     print('@Cham: testing ''read_spectrum'' ...')
     _test_read_spectrum()
+    print(MedSpec.read(fp="file:///home/cham/PycharmProjects/bopy/bopy/data/test_spectra/lamost_dr7/med-58417-NT062347N023956S01_sp01-008.fits"))
 
 """
 
